@@ -5,6 +5,9 @@ namespace Routina\Controllers;
 use Routina\Models\Vacation;
 use Routina\Models\VacationChecklistItem;
 use Routina\Models\VacationNote;
+use Routina\Models\Transaction;
+use Routina\Models\User;
+use Routina\Services\CurrencyService;
 
 class VacationController {
     public function index() {
@@ -120,10 +123,21 @@ class VacationController {
         $checklist = VacationChecklistItem::getAll($_SESSION['user_id'], $vacation['id']);
         $notes = VacationNote::getAll($_SESSION['user_id'], $vacation['id']);
 
+        $user = User::find((int)$_SESSION['user_id']);
+        $currencyCode = CurrencyService::normalizeCode($user->currency ?? 'USD');
+        if (!CurrencyService::isValidCode($currencyCode)) {
+            $currencyCode = 'USD';
+        }
+        $currencySymbol = CurrencyService::symbolFor($currencyCode);
+        $vacationActual = Transaction::totalsBaseByVacation($_SESSION['user_id'], (int)$vacation['id']);
+
         view('vacation/trip', [
             'vacation' => $vacation,
             'checklist' => $checklist,
-            'notes' => $notes
+            'notes' => $notes,
+            'currencySymbol' => $currencySymbol,
+            'currencyCode' => $currencyCode,
+            'vacationActual' => $vacationActual
         ]);
     }
 

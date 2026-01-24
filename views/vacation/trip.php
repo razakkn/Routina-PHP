@@ -22,6 +22,42 @@
 
     <div class="grid">
         <div class="card">
+            <div class="card-kicker">Budget vs Actual</div>
+            <?php
+                $budget = isset($vacation['budget']) ? (float)$vacation['budget'] : null;
+                $actual = isset($vacationActual) ? (float)$vacationActual : 0.0;
+                $currencySymbol = isset($currencySymbol) ? (string)$currencySymbol : '$';
+                $currencySpacer = (preg_match('/^[A-Z]{3}$/', $currencySymbol) ? ' ' : '');
+                $fmt = function ($amount) use ($currencySymbol, $currencySpacer) {
+                    return htmlspecialchars($currencySymbol) . htmlspecialchars($currencySpacer) . number_format((float)$amount, 2);
+                };
+                $pct = ($budget !== null && $budget > 0) ? min(100, ($actual / $budget) * 100) : null;
+            ?>
+            <div class="mt-2">
+                <div class="d-flex justify-content-between">
+                    <div class="text-muted">Planned</div>
+                    <div><?php echo $budget !== null ? $fmt($budget) : '—'; ?></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div class="text-muted">Actual</div>
+                    <div><?php echo $fmt($actual); ?></div>
+                </div>
+                <?php if ($budget !== null && $budget > 0): ?>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar <?php echo $actual > $budget ? 'bg-danger' : 'bg-success'; ?>" role="progressbar" style="width: <?php echo number_format($pct, 2); ?>%" aria-valuenow="<?php echo number_format($pct, 2); ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <?php if ($actual > $budget): ?>
+                        <div class="text-danger small mt-1">Over budget by <?php echo $fmt($actual - $budget); ?></div>
+                    <?php else: ?>
+                        <div class="text-muted small mt-1"><?php echo $fmt(max(0, $budget - $actual)); ?> remaining</div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="text-muted small mt-2">Set a budget to track progress.</div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="card-kicker">Checklist</div>
             <form method="post" class="mt-3">
                 <?= csrf_field() ?>
