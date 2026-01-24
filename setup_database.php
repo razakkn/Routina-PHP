@@ -416,6 +416,10 @@ try {
         $db->exec("CREATE INDEX IF NOT EXISTS idx_finance_diary_user_date ON finance_diary(user_id, entry_date)");
         $db->exec("CREATE INDEX IF NOT EXISTS idx_finance_reflections_user_month ON finance_reflections(user_id, month)");
 
+        // Vacation expense tracking indexes
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_transactions_vacation ON transactions(vacation_id)");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_transactions_user_vacation ON transactions(user_id, vacation_id)");
+
         // Seed User
         $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE id = 1");
         $stmt->execute();
@@ -783,8 +787,22 @@ try {
         destination TEXT,
         start_date TEXT,
         end_date TEXT,
-        status TEXT DEFAULT 'planned'
+        status TEXT DEFAULT 'planned',
+        budget DECIMAL(12,2),
+        notes TEXT
     )");
+
+    // Add missing vacation columns for existing databases
+    $vacationColsStmt = $db->query("PRAGMA table_info(vacations)");
+    $vacationCols = $vacationColsStmt ? $vacationColsStmt->fetchAll() : [];
+    $vacationColNames = array_map(function ($col) { return $col['name']; }, $vacationCols);
+    $addVacationColumn = function ($name, $type) use ($db, $vacationColNames) {
+        if (!in_array($name, $vacationColNames, true)) {
+            $db->exec("ALTER TABLE vacations ADD COLUMN {$name} {$type}");
+        }
+    };
+    $addVacationColumn('budget', 'DECIMAL(12,2)');
+    $addVacationColumn('notes', 'TEXT');
 
     echo "Creating vacation checklist table...\n";
     $db->exec("CREATE TABLE IF NOT EXISTS vacation_checklist_items (
@@ -838,6 +856,10 @@ try {
         $db->exec("CREATE INDEX IF NOT EXISTS idx_finance_income_user_date ON finance_income(user_id, received_date)");
         $db->exec("CREATE INDEX IF NOT EXISTS idx_finance_diary_user_date ON finance_diary(user_id, entry_date)");
         $db->exec("CREATE INDEX IF NOT EXISTS idx_finance_reflections_user_month ON finance_reflections(user_id, month)");
+
+        // Vacation expense tracking indexes
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_transactions_vacation ON transactions(vacation_id)");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_transactions_user_vacation ON transactions(user_id, vacation_id)");
 
     // Seed User
     $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE id = 1");

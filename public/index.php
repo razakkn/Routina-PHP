@@ -100,10 +100,45 @@ function is_admin() {
 function require_admin() {
     require_login();
     if (!is_admin()) {
-        http_response_code(403);
-        echo 'Forbidden';
+        abort(403, 'Access denied', 'You do not have permission to access this resource.');
+    }
+}
+
+/**
+ * Abort the request with an error page.
+ *
+ * @param int $code HTTP status code
+ * @param string $title Error title
+ * @param string $message Error message
+ * @return never
+ */
+function abort(int $code = 500, string $title = 'Error', string $message = 'An unexpected error occurred.'): never
+{
+    http_response_code($code);
+    
+    // If it's an API request, return JSON
+    $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+    if (str_contains($accept, 'application/json')) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'error' => [
+                'code' => $code,
+                'message' => $message
+            ]
+        ]);
         exit;
     }
+    
+    // Render error view
+    $viewPath = __DIR__ . '/../views/errors/error.php';
+    if (file_exists($viewPath)) {
+        include $viewPath;
+    } else {
+        echo "<h1>{$code} - " . htmlspecialchars($title) . "</h1>";
+        echo "<p>" . htmlspecialchars($message) . "</p>";
+    }
+    exit;
 }
 
 function current_user_id() {

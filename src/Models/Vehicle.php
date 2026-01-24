@@ -4,29 +4,71 @@ namespace Routina\Models;
 
 use Routina\Config\Database;
 
-class Vehicle {
-    public static function getAll($userId) {
+/**
+ * Vehicle model for managing user vehicles.
+ * 
+ * Handles CRUD operations for vehicles including extended details
+ * like trim, engine, transmission, and insurance information.
+ */
+class Vehicle
+{
+    /**
+     * Get all vehicles for a user.
+     *
+     * @param int $userId User ID
+     * @return array<int, array<string, mixed>> Array of vehicle records
+     */
+    public static function getAll(int $userId): array
+    {
         $db = Database::getConnection();
         $stmt = $db->prepare("SELECT * FROM vehicles WHERE user_id = :uid");
         $stmt->execute(['uid' => $userId]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll() ?: [];
     }
 
-    public static function find($userId, $id) {
+    /**
+     * Find a vehicle by ID for a user.
+     *
+     * @param int $userId User ID
+     * @param int $id Vehicle ID
+     * @return array<string, mixed>|false Vehicle record or false if not found
+     */
+    public static function find(int $userId, int $id): array|false
+    {
         $db = Database::getConnection();
         $stmt = $db->prepare("SELECT * FROM vehicles WHERE user_id = :uid AND id = :id");
         $stmt->execute(['uid' => $userId, 'id' => $id]);
         return $stmt->fetch();
     }
 
-    public static function existsForUser($userId, $id) {
+    /**
+     * Check if a vehicle exists for a user.
+     *
+     * @param int $userId User ID
+     * @param int $id Vehicle ID
+     * @return bool True if vehicle exists
+     */
+    public static function existsForUser(int $userId, int $id): bool
+    {
         $db = Database::getConnection();
         $stmt = $db->prepare("SELECT 1 FROM vehicles WHERE user_id = :uid AND id = :id");
         $stmt->execute(['uid' => $userId, 'id' => $id]);
         return (bool)$stmt->fetchColumn();
     }
 
-    public static function create($userId, $make, $model, $year, $plate, array $details = []) {
+    /**
+     * Create a new vehicle.
+     *
+     * @param int $userId User ID
+     * @param string $make Vehicle make
+     * @param string $model Vehicle model
+     * @param int $year Model year
+     * @param string|null $plate License plate
+     * @param array<string, mixed> $details Additional details (trim, engine, etc.)
+     * @return bool True on success
+     */
+    public static function create(int $userId, string $make, string $model, int $year, ?string $plate, array $details = []): bool
+    {
         $db = Database::getConnection();
         $stmt = $db->prepare("INSERT INTO vehicles (
                 user_id, make, model, year, license_plate,
@@ -62,7 +104,21 @@ class Vehicle {
         ]);
     }
 
-    public static function update($userId, $id, $make, $model, $year, $plate, $status, array $details = []) {
+    /**
+     * Update an existing vehicle.
+     *
+     * @param int $userId User ID
+     * @param int $id Vehicle ID
+     * @param string $make Vehicle make
+     * @param string $model Vehicle model
+     * @param int $year Model year
+     * @param string|null $plate License plate
+     * @param string $status Vehicle status (active, sold, scrapped)
+     * @param array<string, mixed> $details Additional details (trim, engine, etc.)
+     * @return bool True on success
+     */
+    public static function update(int $userId, int $id, string $make, string $model, int $year, ?string $plate, string $status, array $details = []): bool
+    {
         $db = Database::getConnection();
         $stmt = $db->prepare("UPDATE vehicles SET
                 make = :make,
@@ -108,5 +164,19 @@ class Vehicle {
             'insurance_end_date' => $details['insurance_end_date'] ?? null,
             'insurance_notes' => $details['insurance_notes'] ?? null
         ]);
+    }
+
+    /**
+     * Delete a vehicle by ID for a user.
+     *
+     * @param int $userId User ID
+     * @param int $id Vehicle ID
+     * @return bool True on success
+     */
+    public static function delete(int $userId, int $id): bool
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("DELETE FROM vehicles WHERE id = :id AND user_id = :uid");
+        return $stmt->execute(['id' => $id, 'uid' => $userId]);
     }
 }
