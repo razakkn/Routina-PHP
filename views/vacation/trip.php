@@ -8,6 +8,15 @@
                <?php echo date('M d', strtotime($vacation['start_date'])); ?> -
                <?php echo date('M d, Y', strtotime($vacation['end_date'])); ?>
            </div>
+           <?php if (!empty($vacation['budget'])): ?>
+               <div class="routina-sub">Budget: <?php echo number_format((float)$vacation['budget'], 2); ?></div>
+           <?php endif; ?>
+           <?php if (!empty($vacation['notes'])): ?>
+               <div class="routina-sub"><?php echo htmlspecialchars($vacation['notes']); ?></div>
+           <?php endif; ?>
+       </div>
+       <div>
+           <a class="btn btn-outline-secondary btn-sm" href="/vacation/edit?id=<?php echo (int)$vacation['id']; ?>">Edit Trip</a>
        </div>
     </div>
 

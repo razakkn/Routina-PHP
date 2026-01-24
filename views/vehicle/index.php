@@ -64,6 +64,15 @@
                     <div class="muted">
                         Plate: <?php echo htmlspecialchars($v['license_plate']); ?>
                     </div>
+                    <div class="muted" style="font-size: 13px;">
+                        <?php if (!empty($v['trim'])): ?>Trim: <?php echo htmlspecialchars($v['trim']); ?> • <?php endif; ?>
+                        <?php if (!empty($v['engine'])): ?>Engine: <?php echo htmlspecialchars($v['engine']); ?> • <?php endif; ?>
+                        <?php if (!empty($v['transmission'])): ?>Gear: <?php echo htmlspecialchars($v['transmission']); ?><?php endif; ?>
+                    </div>
+                    <div class="muted" style="font-size: 13px;">
+                        <?php if (!empty($v['owned_date'])): ?>Owned: <?php echo htmlspecialchars($v['owned_date']); ?> • <?php endif; ?>
+                        <?php if (!empty($v['registration_expiry'])): ?>Reg exp: <?php echo htmlspecialchars($v['registration_expiry']); ?><?php endif; ?>
+                    </div>
                     <div class="card-buttons">
                         <a href="/vehicle/edit?id=<?php echo $v['id']; ?>" class="btn-soft">Edit</a>
                         <a href="/vehicle/dashboard" class="btn-soft">Dashboard</a>

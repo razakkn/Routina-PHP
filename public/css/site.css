@@ -84,6 +84,7 @@
   --health: #ff6b8f;
   --calendar: #806bff;
   --family: #6c83ff;
+  --buzz: #ff6bd6;
 
   --journal-rgb: 138,125,255;
   --vacation-rgb: 66,216,255;
@@ -93,6 +94,7 @@
   --health-rgb: 255,107,143;
   --calendar-rgb: 128,107,255;
   --family-rgb: 108,131,255;
+  --buzz-rgb: 255,107,214;
 
   --module-opacity: 0.10;
   --module-hover-opacity: 0.24;
@@ -157,6 +159,12 @@ body[data-module="health"]{
   --module-accent-1-rgb: 255,107,143;
   --module-accent-2-rgb: 66,216,255;
   --module-accent-3-rgb: 124,109,255;
+}
+
+body[data-module="buzz"]{
+  --module-accent-1-rgb: 255,107,214;
+  --module-accent-2-rgb: 124,109,255;
+  --module-accent-3-rgb: 66,216,255;
 }
 
 [data-theme="dark"]{
@@ -419,6 +427,24 @@ body[data-sidebar-state="collapsed"] .app-sidebar .sidebar-surface{
 .nav-health{ --nav-accent-rgb: var(--health-rgb); }
 .nav-calendar{ --nav-accent-rgb: var(--calendar-rgb); }
 .nav-family{ --nav-accent-rgb: var(--family-rgb); }
+.nav-buzz{ --nav-accent-rgb: var(--buzz-rgb); }
+
+.nav-badge{
+  margin-left: auto;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  color: var(--text-inverse);
+  background: linear-gradient(130deg, rgba(var(--module-accent-1-rgb),0.95), rgba(var(--module-accent-2-rgb),0.78));
+  box-shadow: 0 12px 26px rgba(var(--module-accent-1-rgb),0.22);
+}
 
 .app-sidebar-foot{
   margin-top:auto;
@@ -570,6 +596,21 @@ body[data-sidebar-state="collapsed"] .app-sidebar .sidebar-surface{
   box-shadow: 0 24px 55px rgba(var(--module-accent-1-rgb),0.26);
 }
 
+.module-badge{
+  margin-left: 8px;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-inverse);
+  background: rgba(var(--module-accent-1-rgb),0.86);
+}
+
 body[data-theme="dark"] .module-tabs{
   background: rgba(10,13,26,0.50);
   border-color: rgba(124,137,210,0.28);
@@ -716,6 +757,31 @@ body[data-theme="dark"] .module-tab{
 .icon-search::before{ content:"⌕"; }
 .icon-sun::before{ content:"☀"; }
 .icon-moon::before{ content:"☾"; }
+.icon-buzz::before{ content:"📣"; }
+
+.topbar-buzz{
+  position: relative;
+  text-decoration: none;
+}
+
+.topbar-badge{
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--text-inverse);
+  background: linear-gradient(130deg, rgba(var(--module-accent-1-rgb),0.95), rgba(var(--module-accent-2-rgb),0.78));
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 14px 30px rgba(var(--module-accent-1-rgb),0.24);
+}
 
 .theme-toggle{
   position: relative;

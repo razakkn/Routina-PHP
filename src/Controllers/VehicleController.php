@@ -24,7 +24,7 @@ class VehicleController {
             $plate = trim($_POST['plate'] ?? '');
 
             $year = is_numeric($yearRaw) ? (int)$yearRaw : null;
-            if ($make === '' || $model === '' || $plate === '' || $year === null || $year < 1900 || $year > (int)date('Y') + 2) {
+            if ($make === '' || $model === '' || $plate === '' || $year === null || $year < 1960 || $year > (int)date('Y') + 2) {
                 $vehicles = Vehicle::getAll($_SESSION['user_id']);
                 view('vehicle/index', [
                     'vehicles' => $vehicles,
@@ -33,7 +33,24 @@ class VehicleController {
                 return;
             }
 
-            Vehicle::create($_SESSION['user_id'], $make, $model, $year, $plate);
+            $details = [
+                'trim' => trim((string)($_POST['trim'] ?? '')),
+                'engine' => trim((string)($_POST['engine'] ?? '')),
+                'transmission' => trim((string)($_POST['transmission'] ?? '')),
+                'fuel_type' => trim((string)($_POST['fuel_type'] ?? '')),
+                'drivetrain' => trim((string)($_POST['drivetrain'] ?? '')),
+                'color' => trim((string)($_POST['color'] ?? '')),
+                'owned_date' => trim((string)($_POST['owned_date'] ?? '')),
+                'registration_date' => trim((string)($_POST['registration_date'] ?? '')),
+                'registration_expiry' => trim((string)($_POST['registration_expiry'] ?? '')),
+                'insurance_provider' => trim((string)($_POST['insurance_provider'] ?? '')),
+                'insurance_policy_number' => trim((string)($_POST['insurance_policy_number'] ?? '')),
+                'insurance_start_date' => trim((string)($_POST['insurance_start_date'] ?? '')),
+                'insurance_end_date' => trim((string)($_POST['insurance_end_date'] ?? '')),
+                'insurance_notes' => trim((string)($_POST['insurance_notes'] ?? ''))
+            ];
+
+            Vehicle::create($_SESSION['user_id'], $make, $model, $year, $plate, $details);
             header('Location: /vehicle');
             exit;
         }
@@ -65,12 +82,29 @@ class VehicleController {
             $plate = trim($_POST['plate'] ?? '');
 
             $year = is_numeric($yearRaw) ? (int)$yearRaw : null;
-            if ($make === '' || $model === '' || $plate === '' || $year === null || $year < 1900 || $year > (int)date('Y') + 2) {
+            if ($make === '' || $model === '' || $plate === '' || $year === null || $year < 1960 || $year > (int)date('Y') + 2) {
                 view('vehicle/new', ['error' => 'Please provide a valid make, model, year, and license plate.']);
                 return;
             }
 
-            Vehicle::create($_SESSION['user_id'], $make, $model, $year, $plate);
+            $details = [
+                'trim' => trim((string)($_POST['trim'] ?? '')),
+                'engine' => trim((string)($_POST['engine'] ?? '')),
+                'transmission' => trim((string)($_POST['transmission'] ?? '')),
+                'fuel_type' => trim((string)($_POST['fuel_type'] ?? '')),
+                'drivetrain' => trim((string)($_POST['drivetrain'] ?? '')),
+                'color' => trim((string)($_POST['color'] ?? '')),
+                'owned_date' => trim((string)($_POST['owned_date'] ?? '')),
+                'registration_date' => trim((string)($_POST['registration_date'] ?? '')),
+                'registration_expiry' => trim((string)($_POST['registration_expiry'] ?? '')),
+                'insurance_provider' => trim((string)($_POST['insurance_provider'] ?? '')),
+                'insurance_policy_number' => trim((string)($_POST['insurance_policy_number'] ?? '')),
+                'insurance_start_date' => trim((string)($_POST['insurance_start_date'] ?? '')),
+                'insurance_end_date' => trim((string)($_POST['insurance_end_date'] ?? '')),
+                'insurance_notes' => trim((string)($_POST['insurance_notes'] ?? ''))
+            ];
+
+            Vehicle::create($_SESSION['user_id'], $make, $model, $year, $plate, $details);
             header('Location: /vehicle');
             exit;
         }
@@ -104,12 +138,29 @@ class VehicleController {
             $status = $_POST['status'] ?? 'active';
 
             $year = is_numeric($yearRaw) ? (int)$yearRaw : null;
-            if ($make === '' || $model === '' || $plate === '' || $year === null || $year < 1900 || $year > (int)date('Y') + 2) {
+            if ($make === '' || $model === '' || $plate === '' || $year === null || $year < 1960 || $year > (int)date('Y') + 2) {
                 view('vehicle/edit', ['vehicle' => $vehicle, 'error' => 'Please provide a valid make, model, year, and license plate.']);
                 return;
             }
 
-            Vehicle::update($_SESSION['user_id'], (int)$id, $make, $model, $year, $plate, $status);
+            $details = [
+                'trim' => trim((string)($_POST['trim'] ?? '')),
+                'engine' => trim((string)($_POST['engine'] ?? '')),
+                'transmission' => trim((string)($_POST['transmission'] ?? '')),
+                'fuel_type' => trim((string)($_POST['fuel_type'] ?? '')),
+                'drivetrain' => trim((string)($_POST['drivetrain'] ?? '')),
+                'color' => trim((string)($_POST['color'] ?? '')),
+                'owned_date' => trim((string)($_POST['owned_date'] ?? '')),
+                'registration_date' => trim((string)($_POST['registration_date'] ?? '')),
+                'registration_expiry' => trim((string)($_POST['registration_expiry'] ?? '')),
+                'insurance_provider' => trim((string)($_POST['insurance_provider'] ?? '')),
+                'insurance_policy_number' => trim((string)($_POST['insurance_policy_number'] ?? '')),
+                'insurance_start_date' => trim((string)($_POST['insurance_start_date'] ?? '')),
+                'insurance_end_date' => trim((string)($_POST['insurance_end_date'] ?? '')),
+                'insurance_notes' => trim((string)($_POST['insurance_notes'] ?? ''))
+            ];
+
+            Vehicle::update($_SESSION['user_id'], (int)$id, $make, $model, $year, $plate, $status, $details);
             header('Location: /vehicle');
             exit;
         }

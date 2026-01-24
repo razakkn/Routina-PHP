@@ -8,6 +8,18 @@
         </div>
     </div>
 
+    <?php $buzzUnread = (int)($Model->BuzzUnread ?? 0); ?>
+    <?php if ($buzzUnread > 0): ?>
+        <div class="card dash-card" style="margin-bottom: 12px;">
+            <div class="dash-card__header">
+                <h3>Buzz</h3>
+                <a href="/buzz">Open</a>
+            </div>
+            <div class="card-title" style="margin-bottom: 6px;">You have <?php echo $buzzUnread; ?> new request<?php echo $buzzUnread === 1 ? '' : 's'; ?>.</div>
+            <div class="muted">Someone you matched with is trying to connect.</div>
+        </div>
+    <?php endif; ?>
+
     <?php $q = trim((string)($Model->SearchQuery ?? '')); ?>
     <div class="dash-layout <?php echo $q !== '' ? 'dash-layout--single' : ''; ?>">
         <div>
@@ -24,7 +36,8 @@
                         $journalHits = is_array($sr) && isset($sr['journal']) ? $sr['journal'] : [];
                         $eventHits = is_array($sr) && isset($sr['events']) ? $sr['events'] : [];
                         $taskHits = is_array($sr) && isset($sr['tasks']) ? $sr['tasks'] : [];
-                        $totalHits = count($journalHits) + count($eventHits) + count($taskHits);
+                        $familyHits = is_array($sr) && isset($sr['family']) ? $sr['family'] : [];
+                        $totalHits = count($journalHits) + count($eventHits) + count($taskHits) + count($familyHits);
                     ?>
 
                     <?php if ($totalHits === 0): ?>
@@ -100,6 +113,30 @@
                                     </ul>
                                 <?php else: ?>
                                     <div class="muted">No task matches.</div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="dash-search__col">
+                                <div class="dash-search__title">Family (<?php echo (int)count($familyHits); ?>)</div>
+                                <?php if (!empty($familyHits)): ?>
+                                    <ul class="dash-search__list">
+                                        <?php foreach ($familyHits as $hit): ?>
+                                            <li>
+                                                <a class="link" href="/family"><?php echo htmlspecialchars((string)($hit['name'] ?? 'Person')); ?></a>
+                                                <div class="muted" style="margin-top: 4px;">
+                                                    <?php
+                                                        $bits = [];
+                                                        if (!empty($hit['relation'])) { $bits[] = (string)$hit['relation']; }
+                                                        if (!empty($hit['phone'])) { $bits[] = (string)$hit['phone']; }
+                                                        if (!empty($hit['email'])) { $bits[] = (string)$hit['email']; }
+                                                        echo htmlspecialchars(implode(' · ', $bits));
+                                                    ?>
+                                                </div>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php else: ?>
+                                    <div class="muted">No family matches.</div>
                                 <?php endif; ?>
                             </div>
                         </div>

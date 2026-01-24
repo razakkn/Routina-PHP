@@ -1,5 +1,10 @@
 <?php ob_start(); ?>
 
+<?php
+    $currencySymbol = isset($currencySymbol) ? (string)$currencySymbol : '$';
+    $currencySpacer = (preg_match('/^[A-Z]{3}$/', $currencySymbol) ? ' ' : '');
+?>
+
 <div class="routina-wrap">
     <div class="routina-header">
        <div>
@@ -59,7 +64,7 @@
                                 <tr>
                                     <td><?php echo htmlspecialchars($i['source']); ?></td>
                                     <td><?php echo htmlspecialchars($i['received_date']); ?></td>
-                                    <td class="text-end">$<?php echo number_format($i['amount'], 2); ?></td>
+                                    <td class="text-end"><?php echo htmlspecialchars($currencySymbol); ?><?php echo htmlspecialchars($currencySpacer); ?><?php echo number_format($i['amount'], 2); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

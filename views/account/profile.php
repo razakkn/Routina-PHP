@@ -1,194 +1,468 @@
 <?php ob_start(); ?>
 
-<div class="container mt-4">
-  <div class="profile-section-nav mb-4">
-    <a href="/profile?section=profile" class="profile-section-link <?php echo ($Model->ActiveSection == "profile" ? "is-active" : ""); ?>">Profile</a>
-    <a href="/profile?section=avatar" class="profile-section-link <?php echo ($Model->ActiveSection == "avatar" ? "is-active" : ""); ?>">Avatar</a>
-  </div>
+<?php
+    $isAvatar = ($Model->ActiveSection ?? 'profile') === 'avatar';
+    $mode = (string)($Model->Mode ?? 'view');
+    $input = is_array($Model->Input ?? null) ? $Model->Input : [];
+    $name = (string)($input['DisplayName'] ?? '');
+    $job = trim((string)($input['JobTitle'] ?? ''));
+    $headline = trim((string)($input['Headline'] ?? ''));
+    $dob = trim((string)($input['Dob'] ?? ''));
+    $location = trim((string)($input['CurrentLocation'] ?? ''));
+    $bio = trim((string)($input['Bio'] ?? ''));
 
-  <div class="row gy-4">
-    <?php if ($Model->ActiveSection == "avatar"): ?>
-        <div class="col-lg-6 col-md-8 mx-auto">
-             <div class="card shadow-sm" id="avatar-card">
-                <div class="card-body profile-avatar-card">
-                  <h3 class="h4 mb-1">Avatar &amp; appearance</h3>
-                  <p class="text-muted">Upload a personal photo or pick one of our presets.</p>
-                  
-                                    <form method="post" action="/profile?section=avatar" enctype="multipart/form-data">
-                                        <?= csrf_field() ?>
-                    <?php if ($Model->StatusMessage): ?>
-                        <div class="alert alert-success py-2 mb-3 small"><?php echo $Model->StatusMessage; ?></div>
-                    <?php endif; ?>
+    $relationshipStatus = (string)($input['RelationshipStatus'] ?? 'single');
+    $relationshipLabel = $relationshipStatus;
+    if ($relationshipStatus === 'in_relationship') $relationshipLabel = 'In a relationship';
+    if ($relationshipStatus === 'married') $relationshipLabel = 'Married';
+    if ($relationshipStatus === 'single') $relationshipLabel = 'Single';
 
-                    <div class="profile-avatar-preview mt-3 mb-4 d-flex align-items-center gap-3">
-                        <?php if ($Model->Avatar->HasImage && $Model->Avatar->ImageUrl): ?>
-                            <img src="<?php echo $Model->Avatar->ImageUrl; ?>" class="rounded-circle border" style="width: 64px; height: 64px; object-fit: cover;" alt="Avatar">
-                        <?php elseif ($Model->Avatar->PresetKey): ?>
-                            <!-- Map keys to colors roughly using bootstrap utility classes or inline styles --> 
-                            <?php 
-                                $colors = ['lavender' => '#E6E6FA', 'sage' => '#9DC183', 'teal' => '#008080', 'coral' => '#FF7F50'];
-                                $bg = $colors[$Model->Avatar->PresetKey] ?? '#ccc';
-                            ?>
-                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" 
-                                  style="width: 64px; height: 64px; font-size: 1.5rem; background-color: <?php echo $bg; ?>; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-                                <?php echo strtoupper(substr($Model->Input['DisplayName'], 0, 1)); ?>
-                             </div>
-                        <?php else: ?>
-                            <div class="profile-avatar-placeholder rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-size: 1.5rem;">
-                                <?php echo strtoupper(substr($Model->Input['DisplayName'], 0, 1)); ?>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <div class="profile-avatar-meta">
-                            <div class="fw-semibold"><?php echo htmlspecialchars($Model->Input['DisplayName']); ?></div>
-                            <div class="text-muted small">
-                                <?php echo ($Model->Avatar->HasImage || $Model->Avatar->PresetKey) ? "Looking good!" : "No avatar set"; ?>
-                            </div>
-                             <?php if ($Model->Avatar->HasImage || $Model->Avatar->PresetKey): ?>
-                                  <button type="submit" name="DeleteAvatar" value="1" class="btn btn-link btn-sm text-danger p-0 text-decoration-none" style="font-size: 0.8rem;">Remove Avatar</button>
-                             <?php endif; ?>
+    $avatarInitial = strtoupper(substr($name !== '' ? $name : 'U', 0, 1));
+    $avatarUrl = null;
+    if (!empty($Model->Avatar) && !empty($Model->Avatar->ImageUrl)) {
+        $avatarUrl = (string)$Model->Avatar->ImageUrl;
+    }
+
+    $familyMembers = is_array($Model->FamilyMembers ?? null) ? $Model->FamilyMembers : [];
+?>
+
+<div class="profile-shell">
+    <div class="profile-hero">
+        <div class="profile-hero__left">
+            <div class="profile-avatar">
+                <?php if ($avatarUrl): ?>
+                    <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Avatar" />
+                <?php else: ?>
+                    <div class="profile-avatar__initial"><?php echo htmlspecialchars($avatarInitial); ?></div>
+                <?php endif; ?>
+            </div>
+
+            <div class="profile-hero__meta">
+                <div class="profile-hero__name"><?php echo htmlspecialchars($name !== '' ? $name : 'Your profile'); ?></div>
+                <div class="profile-hero__sub">
+                    <?php if ($job !== ''): ?><span class="profile-badge"><?php echo htmlspecialchars($job); ?></span><?php endif; ?>
+                    <span class="profile-badge"><?php echo htmlspecialchars($relationshipLabel); ?></span>
+                    <?php if ($headline !== ''): ?><span class="profile-badge"><?php echo htmlspecialchars($headline); ?></span><?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-hero__right">
+            <?php if (!$isAvatar): ?>
+                <?php if ($mode === 'edit'): ?>
+                    <a class="btn btn-outline-secondary" href="/profile?section=profile&mode=view">Done</a>
+                <?php else: ?>
+                    <a class="btn btn-primary" href="/profile?section=profile&mode=edit">Edit</a>
+                <?php endif; ?>
+            <?php endif; ?>
+            <a class="btn btn-outline-secondary" href="/profile?section=avatar&mode=<?php echo htmlspecialchars($mode); ?>">Avatar</a>
+            <button class="btn btn-outline-secondary" type="button" disabled>Private</button>
+        </div>
+    </div>
+
+    <?php if ($Model->StatusMessage): ?>
+        <div class="alert alert-info mt-3 mb-0"><?php echo htmlspecialchars((string)$Model->StatusMessage); ?></div>
+    <?php endif; ?>
+
+    <?php if ($isAvatar): ?>
+        <div class="profile-grid">
+            <div class="profile-card">
+                <div class="profile-card__head">
+                    <div class="profile-card__title">Avatar &amp; appearance</div>
+                    <div class="profile-card__privacy">Visible to me</div>
+                </div>
+
+                <form method="post" action="/profile?section=avatar&mode=<?php echo htmlspecialchars($mode); ?>" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
+
+                    <div class="d-flex align-items-center gap-3" style="margin-bottom: 14px;">
+                        <div class="profile-avatar" style="width:72px;height:72px;">
+                            <?php if (!empty($Model->Avatar->HasImage) && !empty($Model->Avatar->ImageUrl)): ?>
+                                <img src="<?php echo htmlspecialchars((string)$Model->Avatar->ImageUrl); ?>" alt="Avatar" />
+                            <?php else: ?>
+                                <div class="profile-avatar__initial"><?php echo htmlspecialchars($avatarInitial); ?></div>
+                            <?php endif; ?>
                         </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label small text-uppercase text-muted fw-bold">Presets</label>
-                        <div class="d-flex gap-3">
-                            <?php 
-                                $colors = ['lavender' => '#E6E6FA', 'sage' => '#9DC183', 'teal' => '#008080', 'coral' => '#FF7F50'];
-                            ?>
-                            <?php foreach ($Model->AvatarPresets as $key => $label): ?>
-                                 <button type="submit" name="AvatarPresetKey" value="<?php echo $key; ?>" 
-                                    class="btn btn-outline-light border rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm"
-                                                style="width: 42px; height: 42px; <?php echo $Model->Avatar->PresetKey == $key ? 'outline: 2px solid #7c6dff; outline-offset: 2px;' : ''; ?>"
-                                    title="<?php echo $label; ?>">
-                                    <div style="width: 100%; height: 100%; border-radius: 50%; background-color: <?php echo $colors[$key]; ?>;"></div>
-                                 </button>
-                            <?php endforeach; ?>
+                        <div>
+                            <div style="font-weight:900;"><?php echo htmlspecialchars($name); ?></div>
+                            <div class="text-muted">Upload a photo or choose a preset.</div>
+                            <?php if (!empty($Model->Avatar->HasImage) || !empty($Model->Avatar->PresetKey)): ?>
+                                <button type="submit" name="DeleteAvatar" value="1" class="btn btn-link text-danger p-0" style="text-decoration:none;">Remove avatar</button>
+                            <?php endif; ?>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                         <label class="form-label small text-uppercase text-muted fw-bold">Custom Upload</label>
-                        <div class="input-group input-group-sm">
-                            <input type="file" name="AvatarFile" class="form-control" accept="image/*">
-                            <button class="btn btn-primary" type="submit">Upload</button>
+                        <div class="small text-uppercase text-muted fw-semibold">Presets</div>
+                        <div class="d-flex gap-2" style="margin-top:10px; flex-wrap: wrap;">
+                            <?php $colors = ['lavender' => '#E6E6FA', 'sage' => '#9DC183', 'teal' => '#008080', 'coral' => '#FF7F50']; ?>
+                            <?php foreach (($Model->AvatarPresets ?? []) as $key => $label): ?>
+                                <button type="submit" name="AvatarPresetKey" value="<?php echo htmlspecialchars((string)$key); ?>" class="btn btn-outline-secondary" style="padding: 8px 12px;">
+                                    <span style="display:inline-block;width:12px;height:12px;border-radius:99px;background:<?php echo htmlspecialchars($colors[$key] ?? '#ccc'); ?>;margin-right:8px;"></span>
+                                    <?php echo htmlspecialchars((string)$label); ?>
+                                </button>
+                            <?php endforeach; ?>
                         </div>
-                        <div class="form-text">Max size 2MB.</div>
                     </div>
 
+                    <div class="mb-2">
+                        <div class="small text-uppercase text-muted fw-semibold">Custom upload</div>
+                    </div>
+                    <div class="input-group">
+                        <input type="file" name="AvatarFile" class="form-control" accept="image/*" />
+                        <button class="btn btn-primary" type="submit">Upload</button>
+                    </div>
+                    <div class="form-text">Max size 2MB.</div>
                 </form>
+            </div>
 
+            <div class="profile-card">
+                <div class="profile-card__head">
+                    <div class="profile-card__title">Quick links</div>
+                    <div class="profile-card__privacy">Private</div>
                 </div>
-             </div>
-        </div>
-    <?php else: ?>
-        <!-- Profile Tab -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h2 class="mb-1">Your Profile</h2>
-                    <p class="text-muted">Update core profile information.</p>
-
-                    <form method="post" action="/profile?section=profile" class="mt-3">
-                        <?= csrf_field() ?>
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Display Name 🏷️</label>
-                                <input name="DisplayName" class="form-control" value="<?php echo htmlspecialchars($Model->Input['DisplayName']); ?>" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Job Title 💼</label>
-                                <input name="JobTitle" class="form-control" value="<?php echo htmlspecialchars($Model->Input['JobTitle'] ?? ''); ?>" placeholder="Software Engineer" />
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-3">
-                             <div class="col-md-6">
-                                <label class="form-label">Date of Birth 🎂</label>
-                                <input name="Dob" type="date" class="form-control" value="<?php echo htmlspecialchars($Model->Input['Dob'] ?? ''); ?>" />
-                            </div>
-                             <div class="col-md-6">
-                                <label class="form-label">Gender ⚧️</label>
-                                <input name="Gender" class="form-control" value="<?php echo htmlspecialchars($Model->Input['Gender'] ?? ''); ?>" placeholder="Select or type..." list="genderOptions" />
-                                <datalist id="genderOptions">
-                                    <option value="Male"></option>
-                                    <option value="Female"></option>
-                                    <option value="Non-binary"></option>
-                                    <option value="Agender"></option>
-                                    <option value="Genderfluid"></option>
-                                </datalist>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-3">
-                             <div class="col-md-6">
-                                <label class="form-label">Phone 📱</label>
-                                <input name="Phone" class="form-control" value="<?php echo htmlspecialchars($Model->Input['Phone'] ?? ''); ?>" />
-                            </div>
-                             <div class="col-md-6">
-                                <label class="form-label">Address 🏠</label>
-                                <input name="Address" class="form-control" value="<?php echo htmlspecialchars($Model->Input['Address'] ?? ''); ?>" />
-                            </div>
-                        </div>
-
-                         <div class="mb-3">
-                            <label class="form-label">Bio 📝</label>
-                            <textarea name="Bio" class="form-control" rows="3"><?php echo htmlspecialchars($Model->Input['Bio'] ?? ''); ?></textarea>
-                        </div>
-
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Country of Origin 🚩</label>
-                                <input name="CountryOfOrigin" class="form-control" value="<?php echo htmlspecialchars($Model->Input['CountryOfOrigin'] ?? ''); ?>" />
-                            </div>
-                             <div class="col-md-6">
-                                <label class="form-label">Current Location 📍</label>
-                                <input name="CurrentLocation" class="form-control" value="<?php echo htmlspecialchars($Model->Input['CurrentLocation'] ?? ''); ?>" />
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Preferred Currency 💱</label>
-                                <select name="PreferredCurrencyCode" class="form-select">
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
-                                    <option value="GBP">GBP</option>
-                                </select>
-                            </div>
-                             <div class="col-md-6">
-                                <label class="form-label">Spouses Recorded 💍</label>
-                                <input name="SpouseCount" type="number" class="form-control" value="<?php echo $Model->Input['SpouseCount']; ?>" />
-                            </div>
-                        </div>
-
-                        <div class="mt-4 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </div>
-                    </form>
+                <div class="profile-list">
+                    <a class="profile-item" href="/profile?section=profile&mode=<?php echo htmlspecialchars($mode); ?>" style="text-decoration:none;">
+                        <div class="profile-item__label">Back to profile</div>
+                        <div class="profile-item__value">Open</div>
+                    </a>
+                    <a class="profile-item" href="/family" style="text-decoration:none;">
+                        <div class="profile-item__label">Family tree</div>
+                        <div class="profile-item__value">Open</div>
+                    </a>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-6">
-             <div class="card shadow-sm h-100">
-                <div class="card-body">
-                  <h3 class="mb-1">Relatives</h3>
-                  <p class="text-muted">Capture family members so finance and family dashboards stay in sync.</p>
-                  
-                  <div class="bg-light rounded-3 border p-3 mt-3">
-                      <div class="small text-uppercase text-muted fw-semibold">Household summary</div>
-                      <div class="small mt-2">
-                          <span class="fw-semibold">Spouses noted:</span> 
-                          <?php echo $Model->Input['SpouseCount']; ?>
-                      </div>
-                  </div>
+    <?php else: ?>
+        <div class="profile-grid">
+            <div>
+                <div class="profile-card">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title">About me</div>
+                        <div class="profile-card__privacy">Visible to me</div>
+                    </div>
+
+                    <?php if ($mode === 'edit'): ?>
+                        <form method="post" action="/profile?section=profile&mode=edit" class="profile-rows">
+                            <?= csrf_field() ?>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Display name</div>
+                                <div class="profile-row__v"><input class="form-control" name="DisplayName" value="<?php echo htmlspecialchars((string)($input['DisplayName'] ?? '')); ?>" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Headline</div>
+                                <div class="profile-row__v"><input class="form-control" name="Headline" value="<?php echo htmlspecialchars((string)($input['Headline'] ?? '')); ?>" placeholder="Builder. Father. Night thinker." /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Occupation</div>
+                                <div class="profile-row__v"><input class="form-control" name="JobTitle" value="<?php echo htmlspecialchars((string)($input['JobTitle'] ?? '')); ?>" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Phone</div>
+                                <div class="profile-row__v"><input class="form-control" name="Phone" value="<?php echo htmlspecialchars((string)($input['Phone'] ?? '')); ?>" placeholder="+1 555 123 4567" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Address</div>
+                                <div class="profile-row__v"><input class="form-control" name="Address" value="<?php echo htmlspecialchars((string)($input['Address'] ?? '')); ?>" placeholder="Street, city" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Date of birth</div>
+                                <div class="profile-row__v"><input class="form-control" type="date" name="Dob" value="<?php echo htmlspecialchars((string)($input['Dob'] ?? '')); ?>" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Location</div>
+                                <div class="profile-row__v"><input class="form-control" name="CurrentLocation" value="<?php echo htmlspecialchars((string)($input['CurrentLocation'] ?? '')); ?>" placeholder="Dubai, UAE" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">Gender</div>
+                                <div class="profile-row__v"><input class="form-control" name="Gender" value="<?php echo htmlspecialchars((string)($input['Gender'] ?? '')); ?>" /></div>
+                            </div>
+
+                            <div class="profile-row">
+                                <div class="profile-row__k">What defines you these days?</div>
+                                <div class="profile-row__v"><textarea class="form-control" name="Bio" rows="3"><?php echo htmlspecialchars((string)($input['Bio'] ?? '')); ?></textarea></div>
+                            </div>
+
+                            <div class="profile-card" style="padding: 14px; margin-top: 10px;">
+                                <div class="profile-card__head" style="margin-bottom: 8px;">
+                                    <div class="profile-card__title">Relationship</div>
+                                    <div class="profile-card__privacy">Family only</div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Status</label>
+                                        <select id="RelationshipStatus" name="RelationshipStatus" class="form-select">
+                                            <?php foreach (($Model->RelationshipOptions ?? []) as $k => $label): ?>
+                                                <option value="<?php echo htmlspecialchars((string)$k); ?>" <?php echo ((string)($input['RelationshipStatus'] ?? 'single') === (string)$k) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string)$label); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6" id="PartnerTypeWrap">
+                                        <label class="form-label">Partner type</label>
+                                        <select id="PartnerType" name="PartnerType" class="form-select">
+                                            <option value="">Select…</option>
+                                            <option value="Girlfriend" <?php echo ((string)($input['PartnerType'] ?? '') === 'Girlfriend') ? 'selected' : ''; ?>>Girlfriend</option>
+                                            <option value="Boyfriend" <?php echo ((string)($input['PartnerType'] ?? '') === 'Boyfriend') ? 'selected' : ''; ?>>Boyfriend</option>
+                                        </select>
+                                        <div class="form-text">For married, this will be saved as Spouse.</div>
+                                    </div>
+                                </div>
+
+                                <div id="PartnerFields" style="margin-top: 12px;">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Partner name <span class="text-danger">*</span></label>
+                                            <input id="PartnerName" name="PartnerName" class="form-control" value="<?php echo htmlspecialchars((string)($input['PartnerName'] ?? '')); ?>" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Partner contact number <span class="text-danger">*</span></label>
+                                            <input id="PartnerPhone" name="PartnerPhone" class="form-control" value="<?php echo htmlspecialchars((string)($input['PartnerPhone'] ?? '')); ?>" />
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-3">
+                                        <label class="form-label">Partner email <span class="text-danger">*</span></label>
+                                        <input id="PartnerEmail" name="PartnerEmail" type="email" class="form-control" value="<?php echo htmlspecialchars((string)($input['PartnerEmail'] ?? '')); ?>" />
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" value="1" id="PartnerNoEmail" name="PartnerNoEmail" <?php echo !empty($input['PartnerNoEmail']) ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="PartnerNoEmail">No email available</label>
+                                        </div>
+                                        <div class="form-text">Email + contact number will be reused later for address book/search.</div>
+                                    </div>
+
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Partner DOB</label>
+                                            <input name="PartnerDob" type="date" class="form-control" value="<?php echo htmlspecialchars((string)($input['PartnerDob'] ?? '')); ?>" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Partner gender</label>
+                                            <input name="PartnerGender" class="form-control" value="<?php echo htmlspecialchars((string)($input['PartnerGender'] ?? '')); ?>" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card" style="padding: 14px; margin-top: 10px;">
+                                <div class="profile-card__head" style="margin-bottom: 8px;">
+                                    <div class="profile-card__title">Social &amp; presence</div>
+                                    <div class="profile-card__privacy">Private</div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">LinkedIn</label>
+                                        <input name="LinkedIn" class="form-control" value="<?php echo htmlspecialchars((string)($input['LinkedIn'] ?? '')); ?>" placeholder="https://linkedin.com/in/…" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Instagram</label>
+                                        <input name="Instagram" class="form-control" value="<?php echo htmlspecialchars((string)($input['Instagram'] ?? '')); ?>" placeholder="@handle" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Twitter / X</label>
+                                        <input name="Twitter" class="form-control" value="<?php echo htmlspecialchars((string)($input['Twitter'] ?? '')); ?>" placeholder="@handle" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Website</label>
+                                        <input name="Website" class="form-control" value="<?php echo htmlspecialchars((string)($input['Website'] ?? '')); ?>" placeholder="https://…" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card" style="padding: 14px; margin-top: 10px;">
+                                <div class="profile-card__head" style="margin-bottom: 8px;">
+                                    <div class="profile-card__title">Preferences</div>
+                                    <div class="profile-card__privacy">Private</div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Preferred currency</label>
+                                        <select name="PreferredCurrencyCode" class="form-select">
+                                            <?php $ccyOptions = ($Model->CurrencyOptions ?? ['USD','EUR','GBP']); ?>
+                                            <?php foreach ($ccyOptions as $code => $label): ?>
+                                                <?php
+                                                    if (is_int($code)) {
+                                                        $code = (string)$label;
+                                                        $label = (string)$label;
+                                                    } else {
+                                                        $code = (string)$code;
+                                                        $label = (string)$label;
+                                                    }
+                                                    $optText = ($label !== '' && $label !== $code) ? ($code . ' — ' . $label) : $code;
+                                                ?>
+                                                <option value="<?php echo htmlspecialchars($code); ?>" <?php echo ((string)($input['PreferredCurrencyCode'] ?? 'USD') === $code) ? 'selected' : ''; ?>><?php echo htmlspecialchars($optText); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input name="PreferredCurrencyCodeCustom" class="form-control mt-2" value="" placeholder="Can’t find it? Type 3-letter code (e.g., USD)" maxlength="3" />
+                                        <div class="form-text">If you type a code here, it will override the dropdown.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Spouses recorded</label>
+                                        <input name="SpouseCount" type="number" class="form-control" value="<?php echo htmlspecialchars((string)($input['SpouseCount'] ?? '0')); ?>" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-actions">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <a class="btn btn-outline-secondary" href="/profile?section=profile&mode=view">Cancel</a>
+                            </div>
+                        </form>
+                    <?php else: ?>
+                        <div class="profile-rows">
+                            <div class="profile-row">
+                                <div class="profile-row__k">Date of birth</div>
+                                <div class="profile-row__v"><?php echo htmlspecialchars($dob !== '' ? $dob : '—'); ?></div>
+                            </div>
+                            <div class="profile-row">
+                                <div class="profile-row__k">Location</div>
+                                <div class="profile-row__v"><?php echo htmlspecialchars($location !== '' ? $location : '—'); ?></div>
+                            </div>
+                            <div class="profile-row">
+                                <div class="profile-row__k">Occupation</div>
+                                <div class="profile-row__v"><?php echo htmlspecialchars($job !== '' ? $job : '—'); ?></div>
+                            </div>
+                            <div class="profile-row">
+                                <div class="profile-row__k">Phone</div>
+                                <div class="profile-row__v"><?php echo htmlspecialchars(trim((string)($input['Phone'] ?? '')) !== '' ? (string)$input['Phone'] : '—'); ?></div>
+                            </div>
+                            <div class="profile-row">
+                                <div class="profile-row__k">What defines you these days?</div>
+                                <div class="profile-row__v"><?php echo htmlspecialchars($bio !== '' ? $bio : '—'); ?></div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
-             </div>
+
+                <div class="profile-card" style="margin-top: 14px;">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title">Family</div>
+                        <div class="profile-card__privacy">Family only</div>
+                    </div>
+
+                    <div class="profile-family-grid">
+                        <?php
+                            $cards = array_slice($familyMembers, 0, 3);
+                            if (count($cards) === 0) {
+                                $cards = [];
+                            }
+                        ?>
+
+                        <?php if (empty($cards)): ?>
+                            <div class="profile-family-card" style="grid-column: 1 / -1; min-height: 90px; display:flex; align-items:center; justify-content: space-between;">
+                                <div>
+                                    <div class="profile-family-card__name">No family added yet</div>
+                                    <div class="profile-family-card__rel">Add your first family member</div>
+                                </div>
+                                <a class="btn btn-primary" href="/family">Add family member</a>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($cards as $m): ?>
+                                <?php
+                                    $mName = (string)($m['name'] ?? '');
+                                    $mRel = (string)($m['relation'] ?? '');
+                                    $mDob = trim((string)($m['birthdate'] ?? ''));
+                                ?>
+                                <div class="profile-family-card">
+                                    <div class="profile-family-card__name"><?php echo htmlspecialchars($mName); ?></div>
+                                    <div class="profile-family-card__rel"><?php echo htmlspecialchars($mRel); ?></div>
+                                    <div class="profile-family-card__date"><?php echo htmlspecialchars($mDob !== '' ? $mDob : ''); ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="profile-actions">
+                        <a class="btn btn-outline-secondary" href="/family">Manage family tree</a>
+                    </div>
+                </div>
+
+                <div class="profile-card" style="margin-top: 14px;">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title">Preferences</div>
+                        <div class="profile-card__privacy">Private</div>
+                    </div>
+
+                    <div class="profile-list">
+                        <div class="profile-item">
+                            <div class="profile-item__label">Preferred currency</div>
+                            <?php
+                                $ccyCode = (string)($input['PreferredCurrencyCode'] ?? 'USD');
+                                $ccyLabel = (string)($input['PreferredCurrencyLabel'] ?? '');
+                                $ccyText = ($ccyLabel !== '' && $ccyLabel !== $ccyCode) ? ($ccyCode . ' — ' . $ccyLabel) : $ccyCode;
+                            ?>
+                            <div class="profile-item__value"><?php echo htmlspecialchars($ccyText); ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="profile-card">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title">Family</div>
+                        <div class="profile-card__privacy">Private</div>
+                    </div>
+
+                    <div class="profile-list">
+                        <div class="profile-item">
+                            <div class="profile-item__label">You</div>
+                            <div class="profile-item__value"><?php echo htmlspecialchars($name); ?></div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-item__label">Relationship</div>
+                            <div class="profile-item__value"><?php echo htmlspecialchars($relationshipLabel); ?></div>
+                        </div>
+                        <?php if (!empty($input['PartnerName'])): ?>
+                            <div class="profile-item">
+                                <div class="profile-item__label">Partner</div>
+                                <div class="profile-item__value"><?php echo htmlspecialchars((string)$input['PartnerName']); ?></div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="profile-card" style="margin-top: 14px;">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title">Social &amp; presence</div>
+                        <div class="profile-card__privacy">Private</div>
+                    </div>
+
+                    <?php
+                        $social = [
+                            'LinkedIn' => (string)($input['LinkedIn'] ?? ''),
+                            'Instagram' => (string)($input['Instagram'] ?? ''),
+                            'Twitter / X' => (string)($input['Twitter'] ?? ''),
+                            'Website' => (string)($input['Website'] ?? ''),
+                            'Phone' => (string)($input['Phone'] ?? ''),
+                        ];
+                    ?>
+
+                    <div class="profile-list">
+                        <?php foreach ($social as $k => $v): ?>
+                            <div class="profile-item">
+                                <div class="profile-item__label"><?php echo htmlspecialchars((string)$k); ?></div>
+                                <div class="profile-item__value"><?php echo htmlspecialchars(trim($v) !== '' ? $v : '—'); ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     <?php endif; ?>
-  </div>
 </div>
+
+<?php if (!$isAvatar && $mode === 'edit'): ?>
+    <script src="/js/profile.js" defer></script>
+<?php endif; ?>
 
 <?php 
 $content = ob_get_clean(); 

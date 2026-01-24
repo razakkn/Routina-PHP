@@ -155,6 +155,7 @@
 	const moduleLinks = Array.from(document.querySelectorAll('a[data-module][href]'));
 	moduleLinks.forEach(attachWarpToLink);
 
+
 	// Easter egg: small, rotating, non-repeating (within a session)
 	const injectEasterEgg = () => {
 		// Only for authenticated app pages (after login)

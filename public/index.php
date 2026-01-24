@@ -252,6 +252,29 @@ function http_get_json($url, $timeoutSeconds = 4) {
         $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        if (is_string($raw) && $raw !== '' && $status >= 200 && $status < 300) {
+            $doc = json_decode($raw, true);
+            return is_array($doc) ? $doc : null;
+        }
+
+        // Retry with relaxed SSL verification (common on Windows without CA bundle)
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int)$timeoutSeconds);
+        curl_setopt($ch, CURLOPT_TIMEOUT, (int)$timeoutSeconds);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'User-Agent: RoutinaApp/1.0 (vehicle)'
+        ]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+        $raw = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
         if (!is_string($raw) || $raw === '' || $status < 200 || $status >= 300) {
             return null;
         }
@@ -260,21 +283,37 @@ function http_get_json($url, $timeoutSeconds = 4) {
         return is_array($doc) ? $doc : null;
     }
 
-    $ctx = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'timeout' => (int)$timeoutSeconds,
-            'header' => "User-Agent: RoutinaApp/1.0 (vehicle)\r\nAccept: application/json\r\n"
-        ]
-    ]);
+    $baseHttp = [
+        'method' => 'GET',
+        'timeout' => (int)$timeoutSeconds,
+        'header' => "User-Agent: RoutinaApp/1.0 (vehicle)\r\nAccept: application/json\r\n"
+    ];
 
-    $raw = @file_get_contents($url, false, $ctx);
-    if ($raw === false) {
-        return null;
+    $contexts = [
+        stream_context_create([
+            'http' => $baseHttp,
+            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true]
+        ]),
+        // Retry with relaxed SSL checks (common on Windows without CA bundle)
+        stream_context_create([
+            'http' => $baseHttp,
+            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]
+        ])
+    ];
+
+    foreach ($contexts as $ctx) {
+        $raw = @file_get_contents($url, false, $ctx);
+        if ($raw === false) {
+            continue;
+        }
+
+        $doc = json_decode($raw, true);
+        if (is_array($doc)) {
+            return $doc;
+        }
     }
 
-    $doc = json_decode($raw, true);
-    return is_array($doc) ? $doc : null;
+    return null;
 }
 
 // API: Place autocomplete (parity with ASP.NET PlaceLookupService)
@@ -396,7 +435,7 @@ if ($requestUri === '/api/vehicle/makes') {
 if ($requestUri === '/api/vehicle/models') {
     $year = (int)($_GET['year'] ?? 0);
     $make = trim((string)($_GET['make'] ?? ''));
-    $minYear = 1968;
+    $minYear = 1960;
     $maxYear = (int)date('Y') + 1;
     if ($year < $minYear || $year > $maxYear || $make === '' || strlen($make) < 2) {
         json_response([]);
@@ -504,6 +543,12 @@ if ($requestUri === '/journal/view') {
 if ($requestUri === '/vacation/new') {
     $controller = new \Routina\Controllers\VacationController();
     $controller->newTrip();
+    exit;
+}
+
+if ($requestUri === '/vacation/edit') {
+    $controller = new \Routina\Controllers\VacationController();
+    $controller->edit();
     exit;
 }
 
@@ -630,6 +675,57 @@ if ($requestUri === '/metrics/export/csv') {
     exit;
 }
 
+// Family member actions
+if ($requestUri === '/family/edit') {
+    require_login();
+    $controller = new \Routina\Controllers\FamilyController();
+    $controller->edit();
+    exit;
+}
+
+if ($requestUri === '/family/update' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\FamilyController();
+    $controller->update();
+    exit;
+}
+
+if ($requestUri === '/family/update-parents' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\FamilyController();
+    $controller->updateParents();
+    exit;
+}
+
+if ($requestUri === '/family/delete' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\FamilyController();
+    $controller->delete();
+    exit;
+}
+
+// Buzz (in-app reach out)
+if ($requestUri === '/buzz/send' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\BuzzController();
+    $controller->send();
+    exit;
+}
+
+if ($requestUri === '/buzz/mark' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\BuzzController();
+    $controller->mark();
+    exit;
+}
+
+if ($requestUri === '/buzz/mark-all' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\BuzzController();
+    $controller->markAll();
+    exit;
+}
+
 // 3. Dual-Purpose Routes (Public Landing vs Private App)
 if ($requestUri === '/home') {
     if (isset($_SESSION['user_id'])) {
@@ -653,6 +749,7 @@ $appRoutes = [
     '/health'    => 'HealthController',
     '/calendar'  => 'CalendarController',
     '/family'    => 'FamilyController',
+    '/buzz'      => 'BuzzController',
     '/profile'   => 'ProfileController',
     '/account/profile' => 'ProfileController'
 ];

@@ -12,27 +12,17 @@ function isActive($path, $current) {
     return strpos($current, $path) === 0 ? 'active' : '';
 }
 
-function moduleFromPath($path, $isAuthenticated) {
-    $path = is_string($path) ? $path : '/';
-    if (!$isAuthenticated) {
-        return 'landing';
-    }
+// Use LayoutService for consolidated logic
+$layoutData = \Routina\Services\LayoutService::getGlobalData(
+    isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null,
+    $currentPath
+);
 
-    if ($path === '/' || $path === '/dashboard') return 'dashboard';
-    if (strpos($path, '/journal') === 0) return 'journal';
-    if (strpos($path, '/vacation') === 0) return 'vacation';
-    if (strpos($path, '/finance') === 0) return 'finance';
-    if (strpos($path, '/vehicle') === 0) return 'vehicle';
-    if (strpos($path, '/home') === 0) return 'home';
-    if (strpos($path, '/health') === 0) return 'health';
-    if (strpos($path, '/calendar') === 0) return 'calendar';
-    if (strpos($path, '/family') === 0) return 'family';
-    if (strpos($path, '/profile') === 0 || strpos($path, '/account/profile') === 0) return 'profile';
-
-    return 'dashboard';
-}
-
-$module = moduleFromPath($currentPath, $isAuthenticated);
+// Backward compat locals if needed, though better to use $layoutData->Key
+$module = (is_object($layoutData) && isset($layoutData->Module)) ? (string)$layoutData->Module : ($isAuthenticated ? 'dashboard' : 'landing');
+$buzzUnread = $layoutData->BuzzUnread;
+$buzzBadgeLabel = $layoutData->BuzzBadgeLabel;
+$buzzPreview = $layoutData->BuzzPreview;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -44,9 +34,16 @@ $module = moduleFromPath($currentPath, $isAuthenticated);
     <link rel="stylesheet" href="/css/site.css" />
     <link rel="stylesheet" href="/css/sidebar_slices.css" />
     <link rel="stylesheet" href="/css/canvas.css" />
+    <link rel="stylesheet" href="/css/place_autocomplete.css" />
     <link rel="stylesheet" href="/css/app-3d.css" />
     <?php if ($isAuthenticated && $module === 'dashboard'): ?>
         <link rel="stylesheet" href="/css/dashboard.css" />
+    <?php endif; ?>
+    <?php if ($isAuthenticated && $module === 'profile'): ?>
+        <link rel="stylesheet" href="/css/profile.css" />
+    <?php endif; ?>
+    <?php if ($isAuthenticated && $module === 'family'): ?>
+        <link rel="stylesheet" href="/css/family_tree.css" />
     <?php endif; ?>
 </head>
 <body data-theme="light" data-sidebar-state="expanded" data-has-3d="<?php echo $isAuthenticated ? 'true' : 'false'; ?>" data-module="<?php echo htmlspecialchars($module); ?>">
@@ -80,6 +77,7 @@ $module = moduleFromPath($currentPath, $isAuthenticated);
                     <a class="nav-item nav-health <?php echo isActive('/health', $currentPath); ?>" href="/health" data-module="health"><span class="nav-icon">❤️</span><span>Health Tracker</span></a>
                     <a class="nav-item nav-calendar <?php echo isActive('/calendar', $currentPath); ?>" href="/calendar" data-module="calendar"><span class="nav-icon">🗓️</span><span>Calendar</span></a>
                     <a class="nav-item nav-family <?php echo isActive('/family', $currentPath); ?>" href="/family" data-module="family"><span class="nav-icon">🌳</span><span>Family Tree</span></a>
+                    <a class="nav-item nav-buzz <?php echo isActive('/buzz', $currentPath); ?>" href="/buzz" data-module="buzz"><span class="nav-icon">📣</span><span>Buzz</span><?php if ($buzzBadgeLabel !== ''): ?><span class="nav-badge" aria-label="Unread buzz requests"><?php echo htmlspecialchars($buzzBadgeLabel); ?></span><?php endif; ?></a>
                 </nav>
 
                 <div class="app-sidebar-foot">
@@ -128,6 +126,42 @@ $module = moduleFromPath($currentPath, $isAuthenticated);
                 </button>
 
                 <?php if ($isAuthenticated): ?>
+                    <div class="topbar-buzz-wrapper dropdown">
+                        <a class="icon-button topbar-buzz dropdown-toggle" href="#" id="buzzMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="button" aria-label="Buzz">
+                            <span class="icon icon-buzz" aria-hidden="true"></span>
+                            <?php if ($buzzBadgeLabel !== ''): ?>
+                                <span class="topbar-badge" aria-label="Unread buzz requests"><?php echo htmlspecialchars($buzzBadgeLabel); ?></span>
+                            <?php endif; ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end buzz-dropdown" aria-labelledby="buzzMenu">
+                            <li><h6 class="dropdown-header">Buzz Requests</h6></li>
+                            <?php if (empty($buzzPreview)): ?>
+                                <li><div class="dropdown-item-text text-muted small">No new requests</div></li>
+                            <?php else: ?>
+                                <?php foreach ($buzzPreview as $bp): ?>
+                                    <li>
+                                        <a class="dropdown-item" href="/buzz">
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold small"><?php echo htmlspecialchars((string)($bp['from_display_name'] ?? 'User')); ?></span>
+                                                <span class="text-truncate small text-muted" style="max-width: 180px;">
+                                                    <?php echo htmlspecialchars((string)($bp['message'] ?? 'Buzz')); ?>
+                                                </span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                                <?php if ($buzzUnread > count($buzzPreview)): ?>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-center small text-primary" href="/buzz">See all <?php echo $buzzUnread; ?></a></li>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center small" href="/buzz">Go to Inbox</a></li>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($isAuthenticated): ?>
                     <div class="topbar-profile dropdown">
                         <a class="d-flex align-items-center gap-2 text-decoration-none dropdown-toggle" href="#" id="accountMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
                             <div class="topbar-avatar initials"><?php echo $initials; ?></div>
@@ -161,6 +195,7 @@ $module = moduleFromPath($currentPath, $isAuthenticated);
                 <a class="module-tab" href="/health" data-module="health">Health</a>
                 <a class="module-tab" href="/calendar" data-module="calendar">Calendar</a>
                 <a class="module-tab" href="/family" data-module="family">Family</a>
+                <a class="module-tab" href="/buzz" data-module="buzz">Buzz<?php if ($buzzBadgeLabel !== ''): ?><span class="module-badge" aria-label="Unread buzz requests"><?php echo htmlspecialchars($buzzBadgeLabel); ?></span><?php endif; ?></a>
             </nav>
         <?php endif; ?>
 
@@ -180,5 +215,6 @@ $module = moduleFromPath($currentPath, $isAuthenticated);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="/js/app-3d.js" defer></script>
 <script src="/js/vehicle-make-model.js" defer></script>
+<script src="/js/place_autocomplete.js" defer></script>
 </body>
 </html>

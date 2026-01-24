@@ -1,5 +1,10 @@
 <?php ob_start(); ?>
 
+<?php
+    $currencySymbol = isset($currencySymbol) ? (string)$currencySymbol : '$';
+    $currencySpacer = (preg_match('/^[A-Z]{3}$/', $currencySymbol) ? ' ' : '');
+?>
+
 <div class="routina-wrap">
     <div class="routina-header">
        <div>
@@ -58,8 +63,8 @@
                             <?php foreach ($savings as $s): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($s['goal']); ?></td>
-                                    <td class="text-end">$<?php echo number_format($s['current_amount'], 2); ?></td>
-                                    <td class="text-end">$<?php echo number_format($s['target_amount'], 2); ?></td>
+                                    <td class="text-end"><?php echo htmlspecialchars($currencySymbol); ?><?php echo htmlspecialchars($currencySpacer); ?><?php echo number_format($s['current_amount'], 2); ?></td>
+                                    <td class="text-end"><?php echo htmlspecialchars($currencySymbol); ?><?php echo htmlspecialchars($currencySpacer); ?><?php echo number_format($s['target_amount'], 2); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

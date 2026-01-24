@@ -18,6 +18,9 @@ class VacationController {
             $start = $_POST['start_date'] ?? '';
             $end = $_POST['end_date'] ?? '';
             $status = $_POST['status'] ?? 'Planned';
+            $budgetRaw = $_POST['budget'] ?? '';
+            $notes = trim((string)($_POST['notes'] ?? ''));
+            $budget = ($budgetRaw !== '' && is_numeric($budgetRaw)) ? (float)$budgetRaw : null;
 
             $startTs = $start ? strtotime($start) : false;
             $endTs = $end ? strtotime($end) : false;
@@ -30,7 +33,7 @@ class VacationController {
                 return;
             }
 
-            Vacation::create($_SESSION['user_id'], $dest, $start, $end, $status);
+            Vacation::create($_SESSION['user_id'], $dest, $start, $end, $status, $budget, $notes);
             header('Location: /vacation');
             exit;
         }
@@ -50,6 +53,9 @@ class VacationController {
             $start = $_POST['start_date'] ?? '';
             $end = $_POST['end_date'] ?? '';
             $status = $_POST['status'] ?? 'Planned';
+            $budgetRaw = $_POST['budget'] ?? '';
+            $notes = trim((string)($_POST['notes'] ?? ''));
+            $budget = ($budgetRaw !== '' && is_numeric($budgetRaw)) ? (float)$budgetRaw : null;
 
             $startTs = $start ? strtotime($start) : false;
             $endTs = $end ? strtotime($end) : false;
@@ -58,7 +64,7 @@ class VacationController {
                 return;
             }
 
-            Vacation::create($_SESSION['user_id'], $dest, $start, $end, $status);
+            Vacation::create($_SESSION['user_id'], $dest, $start, $end, $status, $budget, $notes);
             header('Location: /vacation');
             exit;
         }
@@ -119,5 +125,50 @@ class VacationController {
             'checklist' => $checklist,
             'notes' => $notes
         ]);
+    }
+
+    public function edit() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        $id = $_GET['id'] ?? '';
+        if (!is_numeric($id)) {
+            header('Location: /vacation');
+            exit;
+        }
+
+        $vacation = Vacation::find($_SESSION['user_id'], (int)$id);
+        if (!$vacation) {
+            header('Location: /vacation');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $dest = trim($_POST['destination'] ?? '');
+            $start = $_POST['start_date'] ?? '';
+            $end = $_POST['end_date'] ?? '';
+            $status = $_POST['status'] ?? 'Planned';
+            $budgetRaw = $_POST['budget'] ?? '';
+            $notes = trim((string)($_POST['notes'] ?? ''));
+            $budget = ($budgetRaw !== '' && is_numeric($budgetRaw)) ? (float)$budgetRaw : null;
+
+            $startTs = $start ? strtotime($start) : false;
+            $endTs = $end ? strtotime($end) : false;
+            if ($dest === '' || !$startTs || !$endTs || $endTs < $startTs) {
+                view('vacation/edit', [
+                    'vacation' => $vacation,
+                    'error' => 'Please enter a destination and a valid date range.'
+                ]);
+                return;
+            }
+
+            Vacation::update($_SESSION['user_id'], (int)$id, $dest, $start, $end, $status, $budget, $notes);
+            header('Location: /vacation/trip?id=' . (int)$id);
+            exit;
+        }
+
+        view('vacation/edit', ['vacation' => $vacation]);
     }
 }

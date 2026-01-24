@@ -22,9 +22,9 @@
             <div class="card-kicker">Plan Trip</div>
             <form method="post" class="mt-3">
                 <?= csrf_field() ?>
-                <div class="mb-3">
+                <div class="mb-3 place-host">
                     <label class="form-label">Destination</label>
-                    <input name="destination" class="form-control" placeholder="Paris, France" required />
+                    <input name="destination" class="form-control" placeholder="Paris, France" required data-place-autocomplete="true" autocomplete="off" />
                 </div>
                 <div class="row g-3 mb-3">
                     <div class="col-6">
@@ -42,7 +42,18 @@
                         <option value="Idea">💡 Idea</option>
                         <option value="Planned">📅 Planned</option>
                         <option value="Booked">✈️ Booked</option>
+                        <option value="Completed">✅ Completed</option>
                     </select>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Budget (planned)</label>
+                        <input name="budget" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Trip notes</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="Goals, reminders, or ideas..."></textarea>
                 </div>
                 <button class="btn btn-primary w-100">Add Trip</button>
             </form>
@@ -60,9 +71,12 @@
                      <?php echo date('M d', strtotime($v['start_date'])); ?> - 
                      <?php echo date('M d, Y', strtotime($v['end_date'])); ?>
                 </div>
+                <?php if (!empty($v['budget'])): ?>
+                    <div class="muted">Budget: <?php echo number_format((float)$v['budget'], 2); ?></div>
+                <?php endif; ?>
                 <div class="card-buttons">
-                    <button class="btn-soft">Itinerary</button>
-                    <button class="btn-soft">Budget</button>
+                    <a class="btn-soft" href="/vacation/edit?id=<?php echo $v['id']; ?>">Edit</a>
+                    <a class="btn-soft" href="/vacation/trip?id=<?php echo $v['id']; ?>">Open</a>
                 </div>
              </div>
         <?php endforeach; ?>

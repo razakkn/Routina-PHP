@@ -3,6 +3,8 @@
 namespace Routina\Controllers;
 
 use Routina\Models\Calendar;
+use Routina\Models\Buzz;
+use Routina\Models\Family;
 use Routina\Models\FinanceBill;
 use Routina\Models\Health;
 use Routina\Models\HomeTask;
@@ -256,24 +258,36 @@ class DashboardController {
             $journalHits = Journal::search($userId, $searchQuery, 8);
             $eventHits = Calendar::search($userId, $searchQuery, 8);
             $taskHits = HomeTask::search($userId, $searchQuery, 8);
+            $familyHits = Family::search($userId, $searchQuery, 8);
 
             $searchResults = [
                 'journal' => $journalHits,
                 'events' => $eventHits,
-                'tasks' => $taskHits
+                'tasks' => $taskHits,
+                'family' => $familyHits
             ];
 
             $searchCounts = [
                 'journal' => count($journalHits),
                 'events' => count($eventHits),
-                'tasks' => count($taskHits)
+                'tasks' => count($taskHits),
+                'family' => count($familyHits)
             ];
+        }
+
+        $buzzUnread = 0;
+        try {
+            $buzzUnread = Buzz::unreadCount($userId);
+        } catch (\Throwable $e) {
+            $buzzUnread = 0;
         }
 
         $model = (object)[
             'GreetingLine' => $this->greetingLine(),
             'TodayLabel' => date('l, M j'),
             'QuoteOfTheDay' => $quote,
+
+            'BuzzUnread' => $buzzUnread,
 
             'MoodLabel' => $moodLabel,
             'ReflectionsThisWeek' => $reflectionsThisWeek,

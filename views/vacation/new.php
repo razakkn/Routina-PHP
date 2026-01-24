@@ -18,9 +18,9 @@
         <div class="card-kicker">Trip details</div>
         <form method="post" class="mt-3">
             <?= csrf_field() ?>
-            <div class="mb-3">
+            <div class="mb-3 place-host">
                 <label class="form-label">Destination</label>
-                <input name="destination" class="form-control" placeholder="Paris, France" required />
+                <input name="destination" class="form-control" placeholder="Paris, France" required data-place-autocomplete="true" autocomplete="off" />
             </div>
             <div class="row g-3 mb-3">
                 <div class="col-6">
@@ -38,7 +38,18 @@
                     <option value="Idea">💡 Idea</option>
                     <option value="Planned">📅 Planned</option>
                     <option value="Booked">✈️ Booked</option>
+                    <option value="Completed">✅ Completed</option>
                 </select>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Budget (planned)</label>
+                    <input name="budget" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Trip notes</label>
+                <textarea name="notes" class="form-control" rows="2" placeholder="Goals, reminders, or ideas..."></textarea>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary">Create Trip</button>
