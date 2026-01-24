@@ -1,0 +1,97 @@
+/* Interactive sidebar slices (hover / focus / active / selected)
+   Works with classes:
+     .slice.m-journal, .m-vacation, .m-finance, .m-vehicle, .m-home, .m-health, .m-calendar, .m-family
+   Add 'is-active' on the current slice.
+*/
+
+:root{
+  --s-radius: 14px;
+  --s-border: rgba(15,23,42,.10);
+  --s-bg: rgba(255,255,255,.70);
+  --s-text: rgba(15,23,42,.92);
+  --s-muted: rgba(15,23,42,.62);
+}
+
+/* Base slice */
+.slice{
+  position: relative;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-radius: var(--s-radius);
+  border: 1px solid var(--s-border);
+  background: var(--s-bg);
+  color: var(--s-text);
+  text-decoration:none;
+  font-weight: 850;
+  transition: transform .10s ease, box-shadow .10s ease, filter .10s ease, background .10s ease, border-color .10s ease;
+  outline: none;
+}
+
+/* Accent bar (hidden until hover/focus/active) */
+.slice::before{
+  content:"";
+  position:absolute;
+  left: 8px;
+  top: 10px;
+  bottom: 10px;
+  width: 6px;
+  border-radius: 999px;
+  background: var(--accent, rgba(15,23,42,.20));
+  opacity: 0;
+  transform: scaleY(.86);
+  transition: opacity .12s ease, transform .12s ease;
+}
+
+.slice .slice-title{ line-height: 1.05; }
+.slice .slice-sub{ font-size: 12px; font-weight: 700; color: var(--s-muted); margin-top: 2px; }
+
+/* Hover/focus */
+.slice:hover,
+.slice:focus-visible{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(2,6,23,.10);
+  filter: brightness(1.02);
+  border-color: rgba(15,23,42,.16);
+  background: color-mix(in srgb, var(--accent) 9%, rgba(255,255,255,.76));
+}
+
+.slice:hover::before,
+.slice:focus-visible::before{
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+/* Pressed */
+.slice:active{
+  transform: translateY(0px);
+  box-shadow: 0 8px 18px rgba(2,6,23,.10);
+  background: color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.78));
+}
+
+/* Selected/current module */
+.slice.is-active{
+  border-color: color-mix(in srgb, var(--accent) 22%, rgba(15,23,42,.12));
+  background: color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.82));
+  box-shadow: 0 14px 34px rgba(2,6,23,.10);
+}
+.slice.is-active::before{
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+/* Module accents */
+.m-journal{ --accent: #f59e0b; }   /* amber */
+.m-vacation{ --accent: #06b6d4; }  /* cyan */
+.m-finance{ --accent: #22c55e; }   /* green */
+.m-vehicle{ --accent: #fb923c; }   /* orange */
+.m-home{ --accent: #f97316; }      /* deep orange */
+.m-health{ --accent: #ef4444; }    /* red */
+.m-calendar{ --accent: #8b5cf6; }  /* violet */
+.m-family{ --accent: #64748b; }    /* slate */
+
+@media (prefers-reduced-motion: reduce){
+  .slice{ transition:none; }
+  .slice::before{ transition:none; }
+}

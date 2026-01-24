@@ -1,0 +1,107 @@
+:root {
+    --primary-color: #76beff;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+}
+
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#ui-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* Drifting Message */
+.drift-message {
+    pointer-events: auto;
+    opacity: 0;
+    animation: fadeIn 3s ease-out forwards;
+    animation-delay: 1s;
+}
+
+.drift-message h1 {
+    font-size: 4rem;
+    font-weight: 200;
+    letter-spacing: 1rem;
+    margin: 0;
+    text-transform: uppercase;
+    text-shadow: 0 0 30px rgba(118, 190, 255, 0.5);
+    background: linear-gradient(to bottom, #fff, #76beff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.drift-message p {
+    font-size: 1.2rem;
+    color: #88c0d0;
+    letter-spacing: 2px;
+    margin-top: 2rem;
+    font-weight: 300;
+}
+
+/* Reconnect Button */
+.btn-reconnect {
+    margin-top: 4rem;
+    padding: 15px 40px;
+    background: transparent;
+    border: 1px solid rgba(118, 190, 255, 0.3);
+    color: #76beff;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.5s;
+    text-decoration: none;
+    display: inline-block;
+    opacity: 0;
+    animation: fadeIn 3s ease-out forwards;
+    animation-delay: 3s; /* Appear later */
+    border-radius: 99px;
+}
+
+.btn-reconnect:hover {
+    background: rgba(118, 190, 255, 0.1);
+    border-color: #76beff;
+    box-shadow: 0 0 30px rgba(118, 190, 255, 0.2);
+    transform: scale(1.05);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Status Technical Text */
+.status-log {
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.3);
+    text-align: left;
+    line-height: 1.5;
+}

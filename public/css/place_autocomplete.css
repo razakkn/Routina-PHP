@@ -1,0 +1,40 @@
+/* Place autocomplete dropdown - matches Routina calm style */
+.place-host{ position: relative; }
+
+.place-dd{
+  position: absolute;
+  z-index: 50;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.86);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 44px rgba(2,6,23,.12);
+  max-height: 260px;
+  overflow: auto;
+}
+
+.place-dd-item{
+  display: flex;
+  align-items: center;
+  padding: 10px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.place-dd-item:hover,
+.place-dd-item:focus-visible{
+  background: rgba(6,182,212,.10);
+}
+
+.place-dd-main{
+  font-weight: 850;
+  color: rgba(15,23,42,.90);
+  font-size: 13px;
+}

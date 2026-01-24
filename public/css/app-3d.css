@@ -1,0 +1,204 @@
+/* App 3D background layer (authenticated pages)
+   - Renders behind the app shell
+   - Theme-specific via body[data-module]
+*/
+
+#app-3d{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+/* Module switch overlay (tiny delay for a lively “warp” feeling) */
+.nav-warp-overlay{
+  --warp-a: rgba(124,109,255,0.35);
+  --warp-b: rgba(66,216,255,0.22);
+  --warp-c: rgba(255,108,242,0.12);
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  background:
+    radial-gradient(700px 420px at 20% 20%, var(--warp-a), transparent 62%),
+    radial-gradient(680px 420px at 85% 25%, var(--warp-b), transparent 62%),
+    radial-gradient(800px 520px at 50% 110%, var(--warp-c), transparent 62%),
+    rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+
+.nav-warp-overlay.is-on{ opacity: 1; }
+
+body[data-theme="dark"] .nav-warp-overlay{
+  --warp-a: rgba(124,109,255,0.22);
+  --warp-b: rgba(66,216,255,0.16);
+  --warp-c: rgba(255,108,242,0.10);
+  background:
+    radial-gradient(700px 420px at 20% 20%, var(--warp-a), transparent 62%),
+    radial-gradient(680px 420px at 85% 25%, var(--warp-b), transparent 62%),
+    radial-gradient(800px 520px at 50% 110%, var(--warp-c), transparent 62%),
+    rgba(0,0,0,0.25);
+}
+
+/* Per-target-module palettes */
+.nav-warp-overlay[data-to="dashboard"]{
+  --warp-a: rgba(124,109,255,0.38);
+  --warp-b: rgba(66,216,255,0.22);
+  --warp-c: rgba(255,255,255,0.10);
+}
+
+.nav-warp-overlay[data-to="vacation"]{
+  --warp-a: rgba(34,197,94,0.28);
+  --warp-b: rgba(6,182,212,0.22);
+  --warp-c: rgba(59,130,246,0.16);
+}
+
+.nav-warp-overlay[data-to="vehicle"]{
+  --warp-a: rgba(255,149,87,0.30);
+  --warp-b: rgba(124,109,255,0.18);
+  --warp-c: rgba(66,216,255,0.14);
+}
+
+.nav-warp-overlay[data-to="family"]{
+  --warp-a: rgba(34,197,94,0.26);
+  --warp-b: rgba(120,83,46,0.16);
+  --warp-c: rgba(59,130,246,0.14);
+}
+
+.nav-warp-overlay[data-to="finance"]{
+  --warp-a: rgba(50,211,160,0.24);
+  --warp-b: rgba(255,183,87,0.16);
+  --warp-c: rgba(124,109,255,0.14);
+}
+
+.nav-warp-overlay[data-to="home"]{
+  --warp-a: rgba(255,200,87,0.24);
+  --warp-b: rgba(124,109,255,0.14);
+  --warp-c: rgba(66,216,255,0.12);
+}
+
+.nav-warp-overlay[data-to="journal"]{
+  --warp-a: rgba(138,125,255,0.26);
+  --warp-b: rgba(66,216,255,0.16);
+  --warp-c: rgba(255,108,242,0.12);
+}
+
+.nav-warp-overlay[data-to="calendar"]{
+  --warp-a: rgba(128,107,255,0.26);
+  --warp-b: rgba(66,216,255,0.16);
+  --warp-c: rgba(255,108,242,0.12);
+}
+
+.nav-warp-overlay[data-to="health"]{
+  --warp-a: rgba(255,107,143,0.24);
+  --warp-b: rgba(66,216,255,0.16);
+  --warp-c: rgba(124,109,255,0.14);
+}
+
+/* Ensure app UI stays above the canvas */
+.app-shell{
+  position: relative;
+  z-index: 2;
+}
+
+/* Add a bit of 3D perspective to the UI (subtle, safe) */
+body[data-has-3d="true"] .app-main{
+  perspective: 1100px;
+}
+
+body[data-has-3d="true"] .card,
+body[data-has-3d="true"] .module-tabs{
+  transform-style: preserve-3d;
+}
+
+body[data-has-3d="true"] .card{
+  transition: transform .22s cubic-bezier(0.23, 0.92, 0.36, 1), box-shadow .22s ease;
+}
+
+body[data-has-3d="true"] .card:hover{
+  transform: translateY(-2px) translateZ(0);
+}
+
+/* “Glass cube” card variant (used by Quote of the Day) */
+.glass-cube-card{
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.52);
+  border-color: rgba(124,109,255,0.26);
+}
+
+.glass-cube-card::before{
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background:
+    conic-gradient(from 210deg,
+      rgba(124,109,255,0.55),
+      rgba(66,216,255,0.42),
+      rgba(255,108,242,0.26),
+      rgba(124,109,255,0.55));
+  opacity: 0.55;
+  filter: blur(10px);
+  transform: translateZ(-1px);
+  pointer-events: none;
+}
+
+.glass-cube-card::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(420px 220px at 22% 18%, rgba(255,255,255,0.65), transparent 58%),
+    radial-gradient(420px 220px at 84% 22%, rgba(255,255,255,0.45), transparent 58%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body[data-theme="dark"] .glass-cube-card{
+  background: rgba(10,13,26,0.46);
+  border-color: rgba(124,137,210,0.30);
+}
+
+/* Make dashboard cards feel like they float in space */
+body[data-module="dashboard"] .grid .card{
+  animation: dashboard-float 9.5s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+body[data-module="dashboard"] .grid .card:nth-child(2){ animation-delay: -1.8s; }
+body[data-module="dashboard"] .grid .card:nth-child(3){ animation-delay: -3.4s; }
+
+@keyframes dashboard-float{
+  0%, 100%{ transform: translateY(0) translateZ(0); }
+  50%{ transform: translateY(-6px) translateZ(0); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  body[data-module="dashboard"] .grid .card{ animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .nav-warp-overlay{ display: none; }
+}
+
+/* Module-specific opacity tweaks */
+body[data-module="dashboard"] #app-3d{ opacity: 0.98; }
+body[data-module="vacation"] #app-3d{ opacity: 0.90; }
+body[data-module="vehicle"] #app-3d{ opacity: 0.92; }
+
+/* Dashboard gets a more vivid “space” grade */
+body[data-module="dashboard"] #app-3d{
+  filter: saturate(1.22) contrast(1.08);
+}
+
+@media (prefers-reduced-motion: reduce){
+  #app-3d{ display: none; }
+  body[data-has-3d="true"] .card{ transition: none; }
+}

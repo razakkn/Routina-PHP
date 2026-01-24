@@ -1,0 +1,199 @@
+:root {
+    --cube-size: 400px;
+    --primary-color: #00f3ff;
+    --glass-bg: rgba(16, 26, 55, 0.85);
+    --glass-border: rgba(100, 200, 255, 0.3);
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+}
+
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#ui-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* Let clicks pass to canvas initially */
+    perspective: 1000px;
+}
+
+/* Initial "Click to Start" overlay */
+#intro-text {
+    position: absolute;
+    text-align: center;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 0.5s;
+}
+
+#intro-text h1 {
+    font-size: 3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5rem;
+    margin: 0;
+    text-shadow: 0 0 20px var(--primary-color);
+}
+
+#intro-text p {
+    font-size: 1rem;
+    color: #aaa;
+    letter-spacing: 2px;
+    margin-top: 1rem;
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* The Cube Wrapper */
+.cube-wrapper {
+    width: var(--cube-size);
+    height: var(--cube-size);
+    position: relative;
+    transform-style: preserve-3d;
+    transform: translateZ(-2000px) rotateX(20deg) rotateY(20deg); /* Start far away */
+    opacity: 0;
+    transition: transform 2.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 2s ease-in;
+    pointer-events: auto; /* Re-enable pointer events for form */
+}
+
+.cube-wrapper.arrived {
+    transform: translateZ(0) rotateX(0) rotateY(0);
+    opacity: 1;
+}
+
+.cube-wrapper.show-signup {
+    transform: translateZ(0) rotateY(-90deg);
+}
+
+/* Cube Faces */
+.cube-face {
+    position: absolute;
+    width: var(--cube-size);
+    height: var(--cube-size);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    box-sizing: border-box;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+}
+
+.face-front { transform: rotateY(0deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-right { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-back  { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-left  { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-top   { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-bottom{ transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+
+/* Form Aesthetics */
+.brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: var(--primary-color);
+    margin-bottom: 2rem;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: #88c0d0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #334;
+    color: #fff;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: all 0.3s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.btn-cyber {
+    width: 100%;
+    padding: 15px;
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-cyber:hover {
+    background: var(--primary-color);
+    color: #000;
+    box-shadow: 0 0 20px var(--primary-color);
+}
+
+.switch-form {
+    margin-top: auto;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.switch-form a {
+    color: var(--primary-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Decorative corner markers for "Tech" feel */
+.corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--primary-color);
+    border-style: solid;
+    pointer-events: none;
+}
+.tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }

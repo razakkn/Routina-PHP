@@ -1,0 +1,201 @@
+:root {
+    color-scheme: dark;
+}
+
+body.space-logout {
+    margin: 0;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at top, #050a1f 0%, #030816 55%, #01010b 100%);
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: #e6f1ff;
+}
+
+body.space-logout ::selection {
+    background: rgba(118, 190, 255, 0.35);
+}
+
+.space-skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    background: rgba(11, 22, 48, 0.85);
+    color: #9dbdff;
+    border: 1px solid rgba(118, 190, 255, 0.35);
+    backdrop-filter: blur(8px);
+    z-index: 4;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.4s ease;
+}
+
+.space-skip-link:focus,
+.space-skip-link:hover {
+    transform: translateX(-50%) translateY(-3px);
+    background: rgba(23, 42, 84, 0.92);
+    box-shadow: 0 0 24px rgba(90, 153, 255, 0.35);
+}
+
+.space-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.logout-panel {
+    position: relative;
+    z-index: 3;
+    width: min(92vw, 420px);
+    padding: 2.4rem 2.2rem 2.1rem;
+    border-radius: 28px;
+    background: linear-gradient(160deg, rgba(10, 20, 46, 0.92) 0%, rgba(7, 15, 36, 0.78) 100%);
+    border: 1px solid rgba(118, 190, 255, 0.28);
+    box-shadow: 0 28px 80px rgba(13, 32, 78, 0.7), inset 0 0 60px rgba(68, 136, 255, 0.12);
+    text-align: center;
+    transform: translateY(40px);
+    opacity: 0;
+    transition: opacity 1s ease, transform 1s ease;
+}
+
+body.space-logout-ready .logout-panel {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.logout-panel__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: rgba(33, 76, 148, 0.35);
+    color: #8cb8ff;
+    border: 1px solid rgba(126, 196, 255, 0.28);
+    margin-bottom: 1.4rem;
+}
+
+.logout-panel__title {
+    font-size: clamp(1.7rem, 4vw, 2.2rem);
+    font-weight: 700;
+    color: #f0f6ff;
+    margin-bottom: 0.6rem;
+}
+
+.logout-panel__subtitle {
+    font-size: 1rem;
+    color: #b8caf9;
+    margin-bottom: 1.6rem;
+    line-height: 1.6;
+}
+
+.logout-panel__message {
+    font-size: 0.95rem;
+    color: #95b0f9;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.logout-panel__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.space-primary {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    border: none;
+    border-radius: 16px;
+    padding: 0.9rem 1.3rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: linear-gradient(135deg, #4a9dff 0%, #2b6cff 100%);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 20px 42px rgba(60, 126, 255, 0.45);
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.space-primary svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.space-primary:hover,
+.space-primary:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 26px 54px rgba(94, 158, 255, 0.52);
+    outline: none;
+}
+
+.space-secondary {
+    color: #8aaeff;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.25s ease;
+}
+
+.space-secondary:hover,
+.space-secondary:focus-visible {
+    color: #c0d4ff;
+    text-decoration: underline;
+    outline: none;
+}
+
+.space-alert {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 16px;
+    padding: 0.85rem 1rem;
+    background: rgba(214, 65, 118, 0.12);
+    border: 1px solid rgba(255, 109, 168, 0.35);
+    color: #ffc8df;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+body.space-logout-no-webgl .space-alert,
+body.space-logout-no-webgl .logout-panel {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.space-logout-no-webgl .space-skip-link {
+    display: none;
+}
+
+body.space-logout-reduced .space-skip-link {
+    display: none;
+}
+
+@media (max-width: 576px) {
+    .space-skip-link {
+        top: 0.75rem;
+        font-size: 0.78rem;
+    }
+
+    .logout-panel {
+        padding: 2.1rem 1.8rem 2rem;
+        border-radius: 24px;
+    }
+}
