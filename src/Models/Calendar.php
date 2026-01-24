@@ -43,6 +43,36 @@ class Calendar {
         ]);
     }
 
+    /**
+     * Delete a calendar event.
+     *
+     * @param int $userId User ID
+     * @param int $eventId Event ID
+     * @return bool True on success
+     */
+    public static function delete(int $userId, int $eventId): bool
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("DELETE FROM calendar_events WHERE id = :id AND user_id = :uid");
+        return $stmt->execute(['id' => $eventId, 'uid' => $userId]);
+    }
+
+    /**
+     * Find a calendar event by ID.
+     *
+     * @param int $userId User ID
+     * @param int $eventId Event ID
+     * @return array|null Event data or null
+     */
+    public static function find(int $userId, int $eventId): ?array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("SELECT * FROM calendar_events WHERE id = :id AND user_id = :uid");
+        $stmt->execute(['id' => $eventId, 'uid' => $userId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
     public static function search($userId, $query, $limit = 10) {
         $db = Database::getConnection();
         $driver = $db->getAttribute(\PDO::ATTR_DRIVER_NAME);

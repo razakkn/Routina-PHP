@@ -185,4 +185,30 @@ class VacationController {
 
         view('vacation/edit', ['vacation' => $vacation]);
     }
+
+    public function delete() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /vacation');
+            exit;
+        }
+
+        $id = $_POST['id'] ?? '';
+        if (!is_numeric($id)) {
+            header('Location: /vacation');
+            exit;
+        }
+
+        // Also delete related checklist items and notes
+        VacationChecklistItem::deleteAll($_SESSION['user_id'], (int)$id);
+        VacationNote::deleteAll($_SESSION['user_id'], (int)$id);
+        Vacation::delete($_SESSION['user_id'], (int)$id);
+
+        header('Location: /vacation');
+        exit;
+    }
 }

@@ -12,6 +12,7 @@ use Routina\Models\Journal;
 use Routina\Models\Transaction;
 use Routina\Models\Vacation;
 use Routina\Models\VehicleMaintenance;
+use Routina\Services\CalendarService;
 use Routina\Services\QuoteService;
 
 class DashboardController {
@@ -282,6 +283,15 @@ class DashboardController {
             $buzzUnread = 0;
         }
 
+        // Get upcoming reminders from CalendarService
+        $reminders = [];
+        try {
+            $calendarService = new CalendarService();
+            $reminders = $calendarService->getUpcomingReminders($userId, 14);
+        } catch (\Throwable $e) {
+            $reminders = [];
+        }
+
         $model = (object)[
             'GreetingLine' => $this->greetingLine(),
             'TodayLabel' => date('l, M j'),
@@ -312,6 +322,8 @@ class DashboardController {
             'NextTrip' => $nextTrip,
 
             'Insights' => $insights,
+
+            'Reminders' => $reminders,
 
             'SearchQuery' => $searchQuery,
             'SearchResults' => $searchResults,

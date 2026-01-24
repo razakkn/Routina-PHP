@@ -505,13 +505,24 @@ if ($requestUri === '/api/vehicle/models') {
     json_response($out);
 }
 
-// 1. Root / Landing
+// API: Check Routina ID availability
+if ($requestUri === '/api/check-routina-id') {
+    $id = trim((string)($_GET['id'] ?? ''));
+    if ($id === '' || strlen($id) < 3) {
+        json_response(['available' => false, 'error' => 'ID too short']);
+    }
+    
+    $authService = new \Routina\Services\AuthService();
+    $available = $authService->isRoutinaIdAvailable($id);
+    json_response(['available' => $available]);
+}
+
+// 1. Root / Landing - Redirect to login
 if ($requestUri === '/' || $requestUri === '/index.php') {
     if (isset($_SESSION['user_id'])) {
         redirect('/dashboard');
     }
-    view('home/index');
-    exit;
+    redirect('/login');
 }
 
 // 2. Auth Routes
@@ -549,6 +560,52 @@ if ($requestUri === '/register') {
 if ($requestUri === '/forgot-password') {
     $controller = new \Routina\Controllers\AuthController();
     $controller->forgotPassword();
+    exit;
+}
+
+if ($requestUri === '/reset-password') {
+    $controller = new \Routina\Controllers\AuthController();
+    $controller->resetPassword();
+    exit;
+}
+
+if ($requestUri === '/setup-routina-id') {
+    require_login();
+    $controller = new \Routina\Controllers\AuthController();
+    $controller->setupRoutinaId();
+    exit;
+}
+
+if ($requestUri === '/setup-recovery-email') {
+    require_login();
+    $controller = new \Routina\Controllers\AuthController();
+    $controller->setupRecoveryEmail();
+    exit;
+}
+
+if ($requestUri === '/login/mfa') {
+    $controller = new \Routina\Controllers\AuthController();
+    $controller->mfaVerify();
+    exit;
+}
+
+if ($requestUri === '/auth/google') {
+    $controller = new \Routina\Controllers\AuthController();
+    $controller->googleAuth();
+    exit;
+}
+
+if ($requestUri === '/auth/google/callback') {
+    $controller = new \Routina\Controllers\AuthController();
+    $controller->googleCallback();
+    exit;
+}
+
+// MFA Setup page
+if ($requestUri === '/profile/security/mfa') {
+    require_login();
+    $controller = new \Routina\Controllers\ProfileController();
+    $controller->mfaSettings();
     exit;
 }
 
@@ -590,6 +647,13 @@ if ($requestUri === '/vacation/edit') {
 if ($requestUri === '/vacation/trip') {
     $controller = new \Routina\Controllers\VacationController();
     $controller->trip();
+    exit;
+}
+
+if ($requestUri === '/vacation/delete' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\VacationController();
+    $controller->delete();
     exit;
 }
 
@@ -707,6 +771,21 @@ if ($requestUri === '/metrics/export/csv') {
     require_admin();
     $controller = new \Routina\Controllers\AdminController();
     $controller->metricsCsv();
+    exit;
+}
+
+// Calendar routes
+if ($requestUri === '/calendar/delete' && $method === 'POST') {
+    require_login();
+    $controller = new \Routina\Controllers\CalendarController();
+    $controller->delete();
+    exit;
+}
+
+if ($requestUri === '/calendar/api/events') {
+    require_login();
+    $controller = new \Routina\Controllers\CalendarController();
+    $controller->apiEvents();
     exit;
 }
 

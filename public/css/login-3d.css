@@ -197,3 +197,115 @@ body {
 .tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
 .bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
 .br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* Google Button */
+.btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    border: none;
+    border-radius: 4px;
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    pointer-events: auto;
+}
+
+.btn-google:hover {
+    background: #f5f5f5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Divider */
+.divider-or {
+    display: flex;
+    align-items: center;
+    margin: 1rem 0;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.divider-or::before,
+.divider-or::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(100, 200, 255, 0.2);
+}
+
+.divider-or span {
+    padding: 0 10px;
+}
+
+/* Password Strength */
+.password-strength {
+    margin-top: 8px;
+}
+
+.strength-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s, background 0.3s;
+}
+
+.strength-fill.weak { width: 25%; background: #ff4444; }
+.strength-fill.fair { width: 50%; background: #ffaa00; }
+.strength-fill.good { width: 75%; background: #88cc00; }
+.strength-fill.strong { width: 100%; background: #00ff88; }
+
+.strength-text {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+.password-requirements {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+    font-size: 0.7rem;
+}
+
+.password-requirements li {
+    color: #ff6666;
+    margin: 2px 0;
+    padding-left: 16px;
+    position: relative;
+}
+
+.password-requirements li::before {
+    content: '✕';
+    position: absolute;
+    left: 0;
+}
+
+.password-requirements li.valid {
+    color: #00ff88;
+}
+
+.password-requirements li.valid::before {
+    content: '✓';
+}
+
+.btn-cyber:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-cyber:disabled:hover {
+    background: transparent;
+    color: var(--primary-color);
+    box-shadow: none;
+}

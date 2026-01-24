@@ -64,6 +64,59 @@ try {
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS twitter TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS website TEXT");
 
+        // Auth enhancement columns
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS routina_id TEXT UNIQUE");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN DEFAULT FALSE");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret TEXT");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_url TEXT");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+
+        // Password resets table
+        echo "Creating password_resets table...\n";
+        $db->exec("CREATE TABLE IF NOT EXISTS password_resets (
+            id BIGSERIAL PRIMARY KEY,
+            email TEXT NOT NULL,
+            token TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL,
+            used_at TIMESTAMP
+        )");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email)");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)");
+
+        // Alternative emails table (for duplicate detection)
+        echo "Creating user_alternative_emails table...\n";
+        $db->exec("CREATE TABLE IF NOT EXISTS user_alternative_emails (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            email TEXT NOT NULL,
+            is_verified BOOLEAN DEFAULT FALSE,
+            verified_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(email)
+        )");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_alt_emails_user ON user_alternative_emails(user_id)");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_alt_emails_email ON user_alternative_emails(email)");
+
+        // Social accounts table (for linking identity)
+        echo "Creating user_social_accounts table...\n";
+        $db->exec("CREATE TABLE IF NOT EXISTS user_social_accounts (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            provider TEXT NOT NULL,
+            provider_id TEXT NOT NULL,
+            provider_email TEXT,
+            profile_url TEXT,
+            access_token TEXT,
+            refresh_token TEXT,
+            linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(provider, provider_id)
+        )");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_social_user ON user_social_accounts(user_id)");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_social_provider ON user_social_accounts(provider, provider_id)");
+
         // Vehicles
         echo "Creating vehicles table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS vehicles (
@@ -483,6 +536,50 @@ try {
     $addColumn('instagram', 'TEXT');
     $addColumn('twitter', 'TEXT');
     $addColumn('website', 'TEXT');
+    $addColumn('routina_id', 'TEXT');
+    $addColumn('google_id', 'TEXT');
+    $addColumn('email_verified_at', 'TEXT');
+    $addColumn('mfa_enabled', 'INTEGER DEFAULT 0');
+    $addColumn('mfa_secret', 'TEXT');
+    $addColumn('facebook_url', 'TEXT');
+    $addColumn('created_at', 'TEXT');
+
+    // Password resets table
+    echo "Creating password_resets table...\n";
+    $db->exec("CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        token TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        expires_at TEXT NOT NULL,
+        used_at TEXT
+    )");
+
+    // Alternative emails table
+    echo "Creating user_alternative_emails table...\n";
+    $db->exec("CREATE TABLE IF NOT EXISTS user_alternative_emails (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        is_verified INTEGER DEFAULT 0,
+        verified_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // Social accounts table
+    echo "Creating user_social_accounts table...\n";
+    $db->exec("CREATE TABLE IF NOT EXISTS user_social_accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        provider TEXT NOT NULL,
+        provider_id TEXT NOT NULL,
+        provider_email TEXT,
+        profile_url TEXT,
+        access_token TEXT,
+        refresh_token TEXT,
+        linked_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(provider, provider_id)
+    )");
 
     echo "Creating vehicles table...\n";
     $db->exec("CREATE TABLE IF NOT EXISTS vehicles (

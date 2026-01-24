@@ -332,6 +332,120 @@
                     <div class="muted">No reminders right now.</div>
                 <?php endif; ?>
             </div>
+
+            <!-- Upcoming Reminders Widget -->
+            <?php $reminders = $Model->Reminders ?? []; ?>
+            <?php if (!empty($reminders)): ?>
+            <div class="card dash-card" style="margin-top: 12px;">
+                <div class="dash-card__header">
+                    <h3>📆 Upcoming</h3>
+                    <a href="/calendar">Full Calendar</a>
+                </div>
+
+                <?php 
+                // Overdue items
+                $overdue = $reminders['overdue'] ?? [];
+                if (!empty($overdue)): 
+                ?>
+                    <div class="reminder-section">
+                        <div class="reminder-section-label text-danger">⚠️ Overdue</div>
+                        <?php foreach (array_slice($overdue, 0, 3) as $item): ?>
+                            <div class="reminder-item reminder-overdue">
+                                <span class="reminder-icon"><?= htmlspecialchars($item['icon'] ?? '📌') ?></span>
+                                <div class="reminder-details">
+                                    <div class="reminder-title"><?= htmlspecialchars($item['title'] ?? '') ?></div>
+                                    <div class="reminder-meta"><?= htmlspecialchars($item['date_label'] ?? '') ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php 
+                // Today's items
+                $today = $reminders['today'] ?? [];
+                if (!empty($today)): 
+                ?>
+                    <div class="reminder-section">
+                        <div class="reminder-section-label text-primary">📅 Today</div>
+                        <?php foreach (array_slice($today, 0, 4) as $item): ?>
+                            <div class="reminder-item">
+                                <span class="reminder-icon"><?= htmlspecialchars($item['icon'] ?? '📌') ?></span>
+                                <div class="reminder-details">
+                                    <div class="reminder-title"><?= htmlspecialchars($item['title'] ?? '') ?></div>
+                                    <?php if (!empty($item['time'])): ?>
+                                        <div class="reminder-meta"><?= htmlspecialchars($item['time']) ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php 
+                // Tomorrow's items
+                $tomorrow = $reminders['tomorrow'] ?? [];
+                if (!empty($tomorrow)): 
+                ?>
+                    <div class="reminder-section">
+                        <div class="reminder-section-label">📆 Tomorrow</div>
+                        <?php foreach (array_slice($tomorrow, 0, 3) as $item): ?>
+                            <div class="reminder-item">
+                                <span class="reminder-icon"><?= htmlspecialchars($item['icon'] ?? '📌') ?></span>
+                                <div class="reminder-details">
+                                    <div class="reminder-title"><?= htmlspecialchars($item['title'] ?? '') ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php 
+                // This week's items
+                $thisWeek = $reminders['this_week'] ?? [];
+                if (!empty($thisWeek)): 
+                ?>
+                    <div class="reminder-section">
+                        <div class="reminder-section-label">📅 This Week</div>
+                        <?php foreach (array_slice($thisWeek, 0, 4) as $item): ?>
+                            <div class="reminder-item">
+                                <span class="reminder-icon"><?= htmlspecialchars($item['icon'] ?? '📌') ?></span>
+                                <div class="reminder-details">
+                                    <div class="reminder-title"><?= htmlspecialchars($item['title'] ?? '') ?></div>
+                                    <div class="reminder-meta"><?= htmlspecialchars($item['date_label'] ?? '') ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php 
+                // Upcoming items (beyond this week)
+                $upcoming = $reminders['upcoming'] ?? [];
+                if (!empty($upcoming)): 
+                ?>
+                    <div class="reminder-section">
+                        <div class="reminder-section-label">🗓️ Coming Up</div>
+                        <?php foreach (array_slice($upcoming, 0, 3) as $item): ?>
+                            <div class="reminder-item">
+                                <span class="reminder-icon"><?= htmlspecialchars($item['icon'] ?? '📌') ?></span>
+                                <div class="reminder-details">
+                                    <div class="reminder-title"><?= htmlspecialchars($item['title'] ?? '') ?></div>
+                                    <div class="reminder-meta"><?= htmlspecialchars($item['date_label'] ?? '') ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php 
+                $totalCount = count($overdue) + count($today) + count($tomorrow) + count($thisWeek) + count($upcoming);
+                if ($totalCount === 0): 
+                ?>
+                    <div class="muted">No upcoming events.</div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </aside>
         <?php endif; ?>
     </div>

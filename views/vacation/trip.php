@@ -15,8 +15,13 @@
                <div class="routina-sub"><?php echo htmlspecialchars($vacation['notes']); ?></div>
            <?php endif; ?>
        </div>
-       <div>
+       <div class="d-flex gap-2">
            <a class="btn btn-outline-secondary btn-sm" href="/vacation/edit?id=<?php echo (int)$vacation['id']; ?>">Edit Trip</a>
+           <form method="post" action="/vacation/delete" style="display: inline;" onsubmit="return confirm('Delete this vacation and all its checklist items and notes? This cannot be undone.');">
+               <?= csrf_field() ?>
+               <input type="hidden" name="id" value="<?php echo (int)$vacation['id']; ?>">
+               <button type="submit" class="btn btn-outline-danger btn-sm">Delete Trip</button>
+           </form>
        </div>
     </div>
 

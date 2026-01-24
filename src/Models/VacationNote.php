@@ -23,4 +23,10 @@ class VacationNote {
             'created' => date('Y-m-d H:i:s')
         ]);
     }
+
+    public static function deleteAll($userId, $vacationId) {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("DELETE FROM vacation_notes WHERE user_id = :uid AND vacation_id = :vid");
+        return $stmt->execute(['uid' => $userId, 'vid' => $vacationId]);
+    }
 }

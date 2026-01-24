@@ -132,4 +132,123 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 3. Password Strength Validation
+    const passwordInput = document.getElementById('signup-password');
+    const signupBtn = document.getElementById('signup-btn');
+    const strengthFill = document.getElementById('strength-fill');
+    const strengthText = document.getElementById('strength-text');
+    
+    const requirements = {
+        length: document.getElementById('req-length'),
+        upper: document.getElementById('req-upper'),
+        lower: document.getElementById('req-lower'),
+        number: document.getElementById('req-number'),
+        special: document.getElementById('req-special')
+    };
+
+    if (passwordInput && signupBtn) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let score = 0;
+            let checks = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/`~]/.test(password)
+            };
+
+            // Update requirement indicators
+            Object.keys(checks).forEach(key => {
+                if (requirements[key]) {
+                    if (checks[key]) {
+                        requirements[key].classList.add('valid');
+                        score++;
+                    } else {
+                        requirements[key].classList.remove('valid');
+                    }
+                }
+            });
+
+            // Update strength bar
+            if (strengthFill) {
+                strengthFill.className = 'strength-fill';
+                if (score === 0) {
+                    strengthFill.className = 'strength-fill';
+                } else if (score <= 2) {
+                    strengthFill.classList.add('weak');
+                } else if (score <= 3) {
+                    strengthFill.classList.add('fair');
+                } else if (score <= 4) {
+                    strengthFill.classList.add('good');
+                } else {
+                    strengthFill.classList.add('strong');
+                }
+            }
+
+            // Update text
+            if (strengthText) {
+                const labels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+                strengthText.textContent = labels[score] || 'Enter a strong password';
+            }
+
+            // Enable/disable submit button
+            const allValid = Object.values(checks).every(v => v);
+            
+            // Also check if Routina ID is valid and available
+            const routinaIdInput = document.getElementById('signup-routina-id');
+            const routinaIdValid = routinaIdInput && routinaIdInput.dataset.available === 'true';
+            
+            signupBtn.disabled = !(allValid && routinaIdValid);
+        });
+    }
+
+    // 4. Routina ID availability check
+    const routinaIdInput = document.getElementById('signup-routina-id');
+    const routinaIdStatus = document.getElementById('routina-id-status');
+
+    if (routinaIdInput && routinaIdStatus) {
+        let checkTimeout = null;
+
+        routinaIdInput.addEventListener('input', function() {
+            let value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            this.value = value;
+            this.dataset.available = 'false';
+
+            if (signupBtn) signupBtn.disabled = true;
+
+            if (value.length < 3) {
+                routinaIdStatus.innerHTML = '<span style="color: #888;">At least 3 characters required</span>';
+                return;
+            }
+
+            if (!/^[a-z]/.test(value)) {
+                routinaIdStatus.innerHTML = '<span style="color: #ff6b6b;">Must start with a letter</span>';
+                return;
+            }
+
+            routinaIdStatus.innerHTML = '<span style="color: #888;">Checking...</span>';
+
+            if (checkTimeout) clearTimeout(checkTimeout);
+            checkTimeout = setTimeout(() => {
+                fetch('/api/check-routina-id?id=' + encodeURIComponent(value))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.available) {
+                            routinaIdStatus.innerHTML = '<span style="color: #4ecdc4;">✓ @' + value + ' is available!</span>';
+                            routinaIdInput.dataset.available = 'true';
+                            // Re-trigger password validation to update button state
+                            if (passwordInput) passwordInput.dispatchEvent(new Event('input'));
+                        } else {
+                            routinaIdStatus.innerHTML = '<span style="color: #ff6b6b;">✕ @' + value + ' is taken</span>';
+                            routinaIdInput.dataset.available = 'false';
+                        }
+                    })
+                    .catch(() => {
+                        routinaIdStatus.innerHTML = '<span style="color: #888;">Could not check availability</span>';
+                    });
+            }, 300);
+        });
+    }
+
 });

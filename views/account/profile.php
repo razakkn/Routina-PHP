@@ -403,6 +403,41 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Security Settings -->
+                <div class="profile-card" style="margin-top: 14px;">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title">Security</div>
+                        <div class="profile-card__privacy">Private</div>
+                    </div>
+
+                    <?php
+                        $mfaStatus = \Routina\Services\AuthService::getMfaStatus((int)($Model->UserId ?? 0));
+                        $mfaEnabled = $mfaStatus['enabled'] ?? false;
+                    ?>
+
+                    <div class="profile-list">
+                        <div class="profile-item">
+                            <div class="profile-item__label">Two-Factor Auth</div>
+                            <div class="profile-item__value">
+                                <?php if ($mfaEnabled): ?>
+                                    <span class="badge bg-success">Enabled</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">Disabled</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <?php if ($mfaEnabled): ?>
+                            <a class="btn btn-outline-danger btn-sm" href="/profile/security/mfa?action=disable">Disable MFA</a>
+                        <?php else: ?>
+                            <a class="btn btn-outline-primary btn-sm" href="/profile/security/mfa?action=setup">Setup MFA</a>
+                        <?php endif; ?>
+                        <a class="btn btn-outline-secondary btn-sm" href="/reset-password">Change Password</a>
+                    </div>
+                </div>
             </div>
 
             <div>

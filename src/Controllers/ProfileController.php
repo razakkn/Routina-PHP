@@ -362,4 +362,79 @@ class ProfileController {
         header('Location: /profile?section=' . $section . '&mode=' . $mode);
         exit;
     }
+
+    /**
+     * MFA Settings - Setup or disable two-factor authentication
+     */
+    public function mfaSettings() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $action = $_GET['action'] ?? 'view';
+        
+        $mfaStatus = \Routina\Services\AuthService::getMfaStatus($userId);
+
+        // Handle disable action
+        if ($action === 'disable') {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $password = $_POST['password'] ?? '';
+                
+                // Verify current password
+                $db = \Routina\Config\Database::getConnection();
+                $stmt = $db->prepare("SELECT password FROM users WHERE id = :id");
+                $stmt->execute(['id' => $userId]);
+                $user = $stmt->fetch();
+                
+                if ($user && password_verify($password, $user['password'])) {
+                    \Routina\Services\AuthService::disableMfa($userId);
+                    $_SESSION['flash_message'] = 'Two-factor authentication has been disabled.';
+                    header('Location: /profile');
+                    exit;
+                }
+                
+                view('account/mfa_disable', ['error' => 'Incorrect password']);
+                return;
+            }
+            
+            view('account/mfa_disable');
+            return;
+        }
+
+        // Handle setup action
+        if ($action === 'setup') {
+            // Generate new secret if not in session
+            if (empty($_SESSION['mfa_setup_secret'])) {
+                $_SESSION['mfa_setup_secret'] = \Routina\Services\AuthService::generateMfaSecret();
+            }
+            $secret = $_SESSION['mfa_setup_secret'];
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $code = $_POST['code'] ?? '';
+                
+                if (\Routina\Services\AuthService::verifyTotpCode($secret, $code)) {
+                    \Routina\Services\AuthService::enableMfa($userId, $secret);
+                    unset($_SESSION['mfa_setup_secret']);
+                    $_SESSION['flash_message'] = 'Two-factor authentication is now enabled!';
+                    header('Location: /profile');
+                    exit;
+                }
+                
+                view('account/mfa_setup', [
+                    'secret' => $secret,
+                    'error' => 'Invalid verification code. Please try again.'
+                ]);
+                return;
+            }
+
+            view('account/mfa_setup', ['secret' => $secret]);
+            return;
+        }
+
+        // Default: redirect to profile
+        header('Location: /profile');
+        exit;
+    }
 }
