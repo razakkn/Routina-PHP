@@ -67,9 +67,19 @@ abstract class BaseController
      */
     protected function validateCsrf(): bool
     {
-        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        $sessionToken = $_SESSION['csrf_token'] ?? '';
-        
+        // App-wide CSRF uses hidden input name "_csrf" and session key "_csrf" (see public/index.php).
+        // Keep backward compatibility with older/alternate names.
+        $token = $_POST['_csrf']
+            ?? $_SERVER['HTTP_X_CSRF_TOKEN']
+            ?? $_POST['csrf_token']
+            ?? '';
+
+        $sessionToken = $_SESSION['_csrf'] ?? ($_SESSION['csrf_token'] ?? '');
+
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '') {
+            return false;
+        }
+
         return hash_equals($sessionToken, $token);
     }
 

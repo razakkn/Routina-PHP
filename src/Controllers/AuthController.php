@@ -8,37 +8,61 @@ use Routina\Services\AuthService;
 
 class AuthController {
     public function login() {
-        $routinaId = strtolower(trim($_POST['routina_id'] ?? ''));
-        $password = $_POST['password'] ?? '';
+        try {
+            $routinaId = strtolower(trim($_POST['routina_id'] ?? ''));
+            $password = $_POST['password'] ?? '';
 
-        $db = Database::getConnection();
-        $stmt = $db->prepare("SELECT * FROM users WHERE LOWER(routina_id) = :rid");
-        $stmt->execute(['rid' => $routinaId]);
-        $user = $stmt->fetch();
+            // Validate input
+            if (empty($routinaId)) {
+                view('account/login', ['error' => 'Please enter your Routina ID']);
+                return;
+            }
+            if (empty($password)) {
+                view('account/login', ['error' => 'Please enter your password', 'routina_id' => $routinaId]);
+                return;
+            }
 
-        $stored = $user['password'] ?? null;
-        $ok = false;
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM users WHERE LOWER(routina_id) = :rid");
+            $stmt->execute(['rid' => $routinaId]);
+            $user = $stmt->fetch();
 
-        if (is_string($stored) && $stored !== '') {
-            $info = password_get_info($stored);
-            if (!empty($info['algo'])) {
-                $ok = password_verify($password, $stored);
-            } else {
-                // Legacy plaintext (demo seed). Upgrade on successful login.
-                $ok = hash_equals($stored, (string)$password);
-                if ($ok) {
-                    $newHash = password_hash((string)$password, PASSWORD_DEFAULT);
-                    $u = $db->prepare('UPDATE users SET password = :p WHERE id = :id');
-                    $u->execute(['p' => $newHash, 'id' => $user['id']]);
+            // User not found
+            if (!$user) {
+                view('account/login', ['error' => 'Account not found. Please check your Routina ID or create a new account.', 'routina_id' => $routinaId]);
+                return;
+            }
+
+            $stored = $user['password'] ?? null;
+            $ok = false;
+
+            if (is_string($stored) && $stored !== '') {
+                $info = password_get_info($stored);
+                if (!empty($info['algo'])) {
+                    $ok = password_verify($password, $stored);
+                } else {
+                    // Legacy plaintext (demo seed). Upgrade on successful login.
+                    $ok = hash_equals($stored, (string)$password);
+                    if ($ok) {
+                        $newHash = password_hash((string)$password, PASSWORD_DEFAULT);
+                        $u = $db->prepare('UPDATE users SET password = :p WHERE id = :id');
+                        $u->execute(['p' => $newHash, 'id' => $user['id']]);
+                    }
                 }
             }
-        }
 
-        if ($user && $ok) {
+            // Invalid password
+            if (!$ok) {
+                view('account/login', ['error' => 'Invalid password. Please try again.', 'routina_id' => $routinaId]);
+                return;
+            }
+
+            // Login successful - continue with MFA check
             // Check if MFA is enabled
             if (!empty($user['mfa_enabled']) && !empty($user['mfa_secret'])) {
                 // Store pending login in session, redirect to MFA verification
                 $_SESSION['mfa_pending_user_id'] = (int)$user['id'];
+                session_write_close();
                 header('Location: /login/mfa');
                 exit;
             }
@@ -53,20 +77,25 @@ class AuthController {
 
             // Check if user needs to set recovery email (mandatory for account verification)
             if (empty($user['email'])) {
+                session_write_close();
                 header('Location: /setup-recovery-email');
                 exit;
             }
 
             // Check if user needs to set Routina ID (for Google OAuth users)
             if (empty($user['routina_id'])) {
+                session_write_close();
                 header('Location: /setup-routina-id');
                 exit;
             }
 
+            session_write_close();
             header('Location: /dashboard');
             exit;
-        } else {
-            view('account/login', ['error' => 'Invalid credentials']);
+
+        } catch (\Throwable $e) {
+            error_log("Login error: " . $e->getMessage());
+            view('account/login', ['error' => 'An error occurred during login. Please try again.']);
         }
     }
 
@@ -102,6 +131,7 @@ class AuthController {
                 'routina_id' => $user['routina_id'] ?? null
             ];
 
+            session_write_close();
             header('Location: /dashboard');
             exit;
         }
@@ -194,26 +224,26 @@ class AuthController {
         $password = $_POST['password'] ?? '';
 
         if (!$routinaId || !$password) {
-            view('account/login', ['error' => 'Routina ID and Password required']);
+            view('account/register', ['error' => 'Routina ID and Password are required']);
             return;
         }
 
         // Validate Routina ID format (3-20 chars, start with letter, alphanumeric + underscore)
         if (!preg_match('/^[a-z][a-z0-9_]{2,19}$/', $routinaId)) {
-            view('account/login', ['error' => 'Routina ID must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores.']);
+            view('account/register', ['error' => 'Routina ID must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores.']);
             return;
         }
 
         // Check if Routina ID is available
         if (!AuthService::isRoutinaIdAvailable($routinaId)) {
-            view('account/login', ['error' => 'This Routina ID is already taken. Please choose another.']);
+            view('account/register', ['error' => 'This Routina ID is already taken. Please choose another.']);
             return;
         }
 
         // Validate password strength
         $validation = AuthService::validatePassword($password);
         if (!$validation['valid']) {
-            view('account/login', ['error' => $validation['errors'][0]]);
+            view('account/register', ['error' => $validation['errors'][0]]);
             return;
         }
 
@@ -239,11 +269,10 @@ class AuthController {
                 'routina_id' => $routinaId
             ];
             
-            // Redirect to setup recovery email (mandatory)
-            header('Location: /setup-recovery-email');
-            exit;
+            // Redirect to dashboard with success message
+            view('account/register', ['success' => 'Account created successfully! You can now log in.']);
         } else {
-            view('account/login', ['error' => 'Registration failed']);
+            view('account/register', ['error' => 'Registration failed. Please try again.']);
         }
     }
 
@@ -353,6 +382,18 @@ class AuthController {
             
             $_SESSION['user_data']['email'] = $email;
 
+            // Auto-populate profile from family tree data if this email exists there
+            $populated = AuthService::autoPopulateFromFamilyTree($userId, $email);
+            if ($populated) {
+                // Refresh session data with populated name
+                $stmt = $db->prepare("SELECT display_name FROM users WHERE id = :id");
+                $stmt->execute(['id' => $userId]);
+                $refreshed = $stmt->fetch();
+                if ($refreshed && !empty($refreshed['display_name'])) {
+                    $_SESSION['user_data']['name'] = $refreshed['display_name'];
+                }
+            }
+
             // TODO: Send verification email
             // For now, proceed to dashboard
             header('Location: /dashboard');
@@ -397,49 +438,59 @@ class AuthController {
 
         $code = $_GET['code'] ?? '';
         if (empty($code)) {
+            error_log("Google callback: no code received");
             view('account/login', ['error' => 'Google authentication failed.']);
             return;
         }
+        error_log("Google callback: code received, length " . strlen($code));
 
         // Exchange code for tokens
-        $tokenResponse = file_get_contents('https://oauth2.googleapis.com/token', false, stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => 'Content-Type: application/x-www-form-urlencoded',
-                'content' => http_build_query([
-                    'client_id' => $googleClientId,
-                    'client_secret' => $googleClientSecret,
-                    'code' => $code,
-                    'redirect_uri' => $redirectUri,
-                    'grant_type' => 'authorization_code'
-                ])
-            ]
+        $ch = curl_init('https://oauth2.googleapis.com/token');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'client_id' => $googleClientId,
+            'client_secret' => $googleClientSecret,
+            'code' => $code,
+            'redirect_uri' => $redirectUri,
+            'grant_type' => 'authorization_code'
         ]));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+        $tokenResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-        if (!$tokenResponse) {
+        if (!$tokenResponse || $httpCode !== 200) {
+            error_log("Google callback: token exchange failed, HTTP $httpCode, response: " . substr($tokenResponse, 0, 200));
             view('account/login', ['error' => 'Failed to verify Google authentication.']);
             return;
         }
+        error_log("Google callback: token response received, HTTP $httpCode");
 
         $tokens = json_decode($tokenResponse, true);
         $accessToken = $tokens['access_token'] ?? '';
 
         if (empty($accessToken)) {
+            error_log("Google callback: no access token in response: " . $tokenResponse);
             view('account/login', ['error' => 'Failed to get access token from Google.']);
             return;
         }
+        error_log("Google callback: access token obtained");
 
         // Get user info
-        $userResponse = file_get_contents('https://www.googleapis.com/oauth2/v2/userinfo', false, stream_context_create([
-            'http' => [
-                'header' => "Authorization: Bearer {$accessToken}"
-            ]
-        ]));
+        $ch = curl_init('https://www.googleapis.com/oauth2/v2/userinfo');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {$accessToken}"]);
+        $userResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-        if (!$userResponse) {
+        if (!$userResponse || $httpCode !== 200) {
+            error_log("Google callback: user info request failed, HTTP $httpCode, response: " . substr($userResponse, 0, 200));
             view('account/login', ['error' => 'Failed to get user information from Google.']);
             return;
         }
+        error_log("Google callback: user info received, HTTP $httpCode");
 
         $googleUser = json_decode($userResponse, true);
         $googleId = $googleUser['id'] ?? '';
@@ -447,25 +498,34 @@ class AuthController {
         $googleName = $googleUser['name'] ?? '';
 
         if (empty($googleId) || empty($googleEmail)) {
+            error_log("Google callback: invalid user data - id: $googleId, email: $googleEmail");
             view('account/login', ['error' => 'Invalid user data from Google.']);
             return;
         }
+        error_log("Google callback: user data - id: $googleId, email: $googleEmail, name: $googleName");
 
         // Check if user exists by Google ID
         $user = AuthService::findByGoogleId($googleId);
+        $isNewUser = false;
 
         if (!$user) {
+            error_log("Google callback: no user found by Google ID $googleId");
             // Check if email exists
             $existingByEmail = AuthService::findByEmail($googleEmail);
             
             if ($existingByEmail) {
+                error_log("Google callback: linking to existing user by email $googleEmail, user ID " . $existingByEmail['id']);
                 // Link Google to existing account
                 $db = Database::getConnection();
                 $stmt = $db->prepare("UPDATE users SET google_id = :gid, email_verified_at = CURRENT_TIMESTAMP WHERE id = :id");
                 $stmt->execute(['gid' => $googleId, 'id' => $existingByEmail['id']]);
                 
+                // Also auto-populate profile if this email exists in someone's family tree
+                AuthService::autoPopulateFromFamilyTree((int)$existingByEmail['id'], $googleEmail);
+                
                 $user = $existingByEmail;
             } else {
+                error_log("Google callback: creating new user for email $googleEmail");
                 // Create new user
                 $userId = AuthService::createFromGoogle([
                     'id' => $googleId,
@@ -474,15 +534,22 @@ class AuthController {
                 ]);
                 
                 if (!$userId) {
+                    error_log("Google callback: failed to create user");
                     view('account/login', ['error' => 'Failed to create account.']);
                     return;
                 }
+
+                // Auto-populate profile from family tree if email exists there
+                AuthService::autoPopulateFromFamilyTree($userId, $googleEmail);
+                $isNewUser = true;
 
                 $db = Database::getConnection();
                 $stmt = $db->prepare("SELECT * FROM users WHERE id = :id");
                 $stmt->execute(['id' => $userId]);
                 $user = $stmt->fetch();
             }
+        } else {
+            error_log("Google callback: user found by Google ID $googleId, user ID " . $user['id']);
         }
 
         // Log in user
@@ -493,13 +560,18 @@ class AuthController {
             'email' => $user['email'] ?? $googleEmail,
             'routina_id' => $user['routina_id'] ?? null
         ];
+        error_log("Google callback: session set for user ID " . $user['id'] . ", routina_id: " . ($user['routina_id'] ?? 'null'));
 
         // Check if user needs to set Routina ID
         if (empty($user['routina_id'])) {
+            error_log("Google callback: redirecting to setup-routina-id");
+            session_write_close();
             header('Location: /setup-routina-id');
             exit;
         }
 
+        error_log("Google callback: redirecting to dashboard");
+        session_write_close();
         header('Location: /dashboard');
         exit;
     }

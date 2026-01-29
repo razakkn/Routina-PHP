@@ -75,11 +75,30 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <label class="form-label">Fuel type</label>
-                    <input name="fuel_type" class="form-control" value="<?php echo htmlspecialchars($vehicle['fuel_type'] ?? ''); ?>" />
+                    <?php $ft = (string)($vehicle['fuel_type'] ?? ''); ?>
+                    <select name="fuel_type" class="form-select">
+                        <option value="">Select</option>
+                        <option value="Petrol" <?php echo $ft === 'Petrol' ? 'selected' : ''; ?>>Petrol</option>
+                        <option value="Diesel" <?php echo $ft === 'Diesel' ? 'selected' : ''; ?>>Diesel</option>
+                        <option value="Hybrid" <?php echo $ft === 'Hybrid' ? 'selected' : ''; ?>>Hybrid</option>
+                        <option value="Electric" <?php echo $ft === 'Electric' ? 'selected' : ''; ?>>Electric</option>
+                        <option value="Plug-in Hybrid" <?php echo $ft === 'Plug-in Hybrid' ? 'selected' : ''; ?>>Plug-in Hybrid</option>
+                        <option value="CNG" <?php echo $ft === 'CNG' ? 'selected' : ''; ?>>CNG</option>
+                        <option value="LPG" <?php echo $ft === 'LPG' ? 'selected' : ''; ?>>LPG</option>
+                        <option value="Other" <?php echo $ft === 'Other' ? 'selected' : ''; ?>>Other</option>
+                    </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Drivetrain</label>
-                    <input name="drivetrain" class="form-control" value="<?php echo htmlspecialchars($vehicle['drivetrain'] ?? ''); ?>" />
+                    <?php $dt = (string)($vehicle['drivetrain'] ?? ''); ?>
+                    <select name="drivetrain" class="form-select">
+                        <option value="">Select</option>
+                        <option value="FWD" <?php echo $dt === 'FWD' ? 'selected' : ''; ?>>FWD (Front-Wheel Drive)</option>
+                        <option value="RWD" <?php echo $dt === 'RWD' ? 'selected' : ''; ?>>RWD (Rear-Wheel Drive)</option>
+                        <option value="AWD" <?php echo $dt === 'AWD' ? 'selected' : ''; ?>>AWD (All-Wheel Drive)</option>
+                        <option value="4WD" <?php echo $dt === '4WD' ? 'selected' : ''; ?>>4WD (Four-Wheel Drive)</option>
+                        <option value="Other" <?php echo $dt === 'Other' ? 'selected' : ''; ?>>Other</option>
+                    </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Color</label>
@@ -129,19 +148,43 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select" id="vehicleStatus" onchange="toggleDisposalRemarks()">
                     <option value="active" <?php echo $vehicle['status'] === 'active' ? 'selected' : ''; ?>>Active</option>
                     <option value="inactive" <?php echo $vehicle['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                    <option value="maintenance" <?php echo $vehicle['status'] === 'maintenance' ? 'selected' : ''; ?>>Maintenance</option>
+                    <option value="maintenance" <?php echo $vehicle['status'] === 'maintenance' ? 'selected' : ''; ?>>Under Maintenance</option>
+                    <option value="sold" <?php echo $vehicle['status'] === 'sold' ? 'selected' : ''; ?>>Sold</option>
+                    <option value="disposed" <?php echo $vehicle['status'] === 'disposed' ? 'selected' : ''; ?>>Disposed / Scrapped</option>
                 </select>
+            </div>
+            <div class="mb-3" id="disposalRemarksDiv" style="display: <?php echo in_array($vehicle['status'], ['sold', 'disposed']) ? 'block' : 'none'; ?>;">
+                <label class="form-label">Disposal Remarks</label>
+                <textarea name="disposal_remarks" class="form-control" rows="2" placeholder="Add notes about when and how the vehicle was sold/disposed..."><?php echo htmlspecialchars($vehicle['disposal_remarks'] ?? ''); ?></textarea>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary">Save Changes</button>
                 <a class="btn btn-outline-secondary" href="/vehicle">Cancel</a>
             </div>
         </form>
+
+        <hr class="my-4">
+        <div class="text-danger">
+            <strong>Danger Zone</strong>
+            <p class="muted">Permanently delete this vehicle and all associated records.</p>
+            <form method="post" action="/vehicle/delete?id=<?php echo $vehicle['id']; ?>" onsubmit="return confirm('Are you sure you want to permanently delete this vehicle? This action cannot be undone.');">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-outline-danger btn-sm">Delete Vehicle</button>
+            </form>
+        </div>
     </div>
 </div>
+
+<script>
+function toggleDisposalRemarks() {
+    const status = document.getElementById('vehicleStatus').value;
+    const remarksDiv = document.getElementById('disposalRemarksDiv');
+    remarksDiv.style.display = (status === 'sold' || status === 'disposed') ? 'block' : 'none';
+}
+</script>
 
 <?php
 $content = ob_get_clean();

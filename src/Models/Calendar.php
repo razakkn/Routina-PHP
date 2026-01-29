@@ -11,14 +11,20 @@ class Calendar {
                 $driver = $db->getAttribute(\PDO::ATTR_DRIVER_NAME);
                 if ($driver === 'pgsql') {
                         // In Postgres, start_datetime is stored as TEXT (ISO-like). Cast for comparison.
-                        // Use CURRENT_DATE instead of SQLite's date('now').
                         $sql = "SELECT * FROM calendar_events
                                         WHERE user_id = :uid
                                             AND start_datetime::timestamp >= CURRENT_DATE
                                         ORDER BY start_datetime::timestamp ASC
                                         LIMIT 10";
+                } elseif ($driver === 'mysql') {
+                        // MySQL: use CURDATE() for current date
+                        $sql = "SELECT * FROM calendar_events
+                                        WHERE user_id = :uid
+                                            AND start_datetime >= CURDATE()
+                                        ORDER BY start_datetime ASC
+                                        LIMIT 10";
                 } else {
-                        // SQLite/MySQL fallback: compare against today's date.
+                        // SQLite fallback
                         $sql = "SELECT * FROM calendar_events
                                         WHERE user_id = :uid
                                             AND start_datetime >= date('now')

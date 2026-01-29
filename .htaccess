@@ -1,0 +1,19 @@
+# Root .htaccess
+# - Route the site root '/' to /public/
+# - Allow real files at root (e.g. setup_database.php, test_db.php)
+# - Send all other requests to /public/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Always route the root URL to the app
+    RewriteRule ^$ public/ [L]
+
+    # If the requested path is an existing file or directory, serve it directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Otherwise, route into public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

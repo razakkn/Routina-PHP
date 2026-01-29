@@ -74,11 +74,28 @@
                 <div class="row g-3 mb-3">
                     <div class="col-md-4">
                         <label class="form-label">Fuel type</label>
-                        <input name="fuel_type" class="form-control" placeholder="Petrol, Diesel, Hybrid" />
+                        <select name="fuel_type" class="form-select">
+                            <option value="">Select</option>
+                            <option value="Petrol">Petrol</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Plug-in Hybrid">Plug-in Hybrid</option>
+                            <option value="CNG">CNG</option>
+                            <option value="LPG">LPG</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Drivetrain</label>
-                        <input name="drivetrain" class="form-control" placeholder="FWD, AWD, RWD" />
+                        <select name="drivetrain" class="form-select">
+                            <option value="">Select</option>
+                            <option value="FWD">FWD (Front-Wheel Drive)</option>
+                            <option value="RWD">RWD (Rear-Wheel Drive)</option>
+                            <option value="AWD">AWD (All-Wheel Drive)</option>
+                            <option value="4WD">4WD (Four-Wheel Drive)</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Color</label>

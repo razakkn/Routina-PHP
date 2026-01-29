@@ -157,7 +157,8 @@ class VehicleController {
                 'insurance_policy_number' => trim((string)($_POST['insurance_policy_number'] ?? '')),
                 'insurance_start_date' => trim((string)($_POST['insurance_start_date'] ?? '')),
                 'insurance_end_date' => trim((string)($_POST['insurance_end_date'] ?? '')),
-                'insurance_notes' => trim((string)($_POST['insurance_notes'] ?? ''))
+                'insurance_notes' => trim((string)($_POST['insurance_notes'] ?? '')),
+                'disposal_remarks' => trim((string)($_POST['disposal_remarks'] ?? ''))
             ];
 
             Vehicle::update($_SESSION['user_id'], (int)$id, $make, $model, $year, $plate, $status, $details);
@@ -166,6 +167,28 @@ class VehicleController {
         }
 
         view('vehicle/edit', ['vehicle' => $vehicle]);
+    }
+
+    public function delete() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /vehicle');
+            exit;
+        }
+
+        $id = $_GET['id'] ?? '';
+        if (!is_numeric($id)) {
+            header('Location: /vehicle');
+            exit;
+        }
+
+        Vehicle::delete($_SESSION['user_id'], (int)$id);
+        header('Location: /vehicle');
+        exit;
     }
 
     public function vendors() {

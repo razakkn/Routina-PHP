@@ -34,11 +34,15 @@ $buzzPreview = $layoutData->BuzzPreview;
     <link rel="stylesheet" href="/css/site.css" />
     <link rel="stylesheet" href="/css/sidebar_slices.css" />
     <link rel="stylesheet" href="/css/canvas.css" />
-    <link rel="stylesheet" href="/css/place_autocomplete.css" />
+    <?php if ($isAuthenticated && $module === 'vacation'): ?>
+        <link rel="stylesheet" href="/css/place_autocomplete.css" />
+    <?php endif; ?>
     <link rel="stylesheet" href="/css/app-3d.css" />
     <?php if ($isAuthenticated && $module === 'dashboard'): ?>
         <link rel="stylesheet" href="/css/dashboard.css" />
     <?php endif; ?>
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico" />
     <?php if ($isAuthenticated && $module === 'profile'): ?>
         <link rel="stylesheet" href="/css/profile.css" />
     <?php endif; ?>
@@ -212,9 +216,15 @@ $buzzPreview = $layoutData->BuzzPreview;
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/site.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
-<script src="/js/app-3d.js" defer></script>
-<script src="/js/vehicle-make-model.js" defer></script>
-<script src="/js/place_autocomplete.js" defer></script>
+<?php if ($isAuthenticated): ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="/js/app-3d.js" defer></script>
+<?php endif; ?>
+<?php if ($isAuthenticated && $module === 'vehicle'): ?>
+    <script src="/js/vehicle-make-model.js" defer></script>
+<?php endif; ?>
+<?php if ($isAuthenticated && $module === 'vacation'): ?>
+    <script src="/js/place_autocomplete.js" defer></script>
+<?php endif; ?>
 </body>
 </html>

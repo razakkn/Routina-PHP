@@ -25,6 +25,7 @@
         <div class="mt-3 d-flex gap-2">
             <a class="btn btn-outline-primary btn-sm" href="/metrics/json">Download JSON</a>
             <a class="btn btn-outline-secondary btn-sm" href="/metrics/export/csv">Download CSV</a>
+            <a class="btn btn-outline-secondary btn-sm" href="/admin/diagnostics">Diagnostics</a>
         </div>
     </div>
 

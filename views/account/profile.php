@@ -4,6 +4,7 @@
     $isAvatar = ($Model->ActiveSection ?? 'profile') === 'avatar';
     $mode = (string)($Model->Mode ?? 'view');
     $input = is_array($Model->Input ?? null) ? $Model->Input : [];
+    $email = trim((string)($input['Email'] ?? ''));
     $name = (string)($input['DisplayName'] ?? '');
     $job = trim((string)($input['JobTitle'] ?? ''));
     $headline = trim((string)($input['Headline'] ?? ''));
@@ -11,11 +12,14 @@
     $location = trim((string)($input['CurrentLocation'] ?? ''));
     $bio = trim((string)($input['Bio'] ?? ''));
 
+
     $relationshipStatus = (string)($input['RelationshipStatus'] ?? 'single');
     $relationshipLabel = $relationshipStatus;
     if ($relationshipStatus === 'in_relationship') $relationshipLabel = 'In a relationship';
     if ($relationshipStatus === 'married') $relationshipLabel = 'Married';
     if ($relationshipStatus === 'single') $relationshipLabel = 'Single';
+
+    $familyRelation = trim((string)($input['FamilyRelation'] ?? ''));
 
     $avatarInitial = strtoupper(substr($name !== '' ? $name : 'U', 0, 1));
     $avatarUrl = null;
@@ -39,9 +43,11 @@
 
             <div class="profile-hero__meta">
                 <div class="profile-hero__name"><?php echo htmlspecialchars($name !== '' ? $name : 'Your profile'); ?></div>
+                <?php if ($email !== ''): ?><div class="profile-hero__email text-muted" style="font-size: 0.9rem;"><?php echo htmlspecialchars($email); ?></div><?php endif; ?>
                 <div class="profile-hero__sub">
                     <?php if ($job !== ''): ?><span class="profile-badge"><?php echo htmlspecialchars($job); ?></span><?php endif; ?>
                     <span class="profile-badge"><?php echo htmlspecialchars($relationshipLabel); ?></span>
+                    <?php if ($familyRelation !== ''): ?><span class="profile-badge bg-info text-dark">Relation: <?php echo htmlspecialchars($familyRelation); ?></span><?php endif; ?>
                     <?php if ($headline !== ''): ?><span class="profile-badge"><?php echo htmlspecialchars($headline); ?></span><?php endif; ?>
                 </div>
             </div>
@@ -183,7 +189,15 @@
 
                             <div class="profile-row">
                                 <div class="profile-row__k">Gender</div>
-                                <div class="profile-row__v"><input class="form-control" name="Gender" value="<?php echo htmlspecialchars((string)($input['Gender'] ?? '')); ?>" /></div>
+                                <div class="profile-row__v">
+                                    <select class="form-select" name="Gender">
+                                        <option value="">Select gender...</option>
+                                        <option value="Male" <?php echo ((string)($input['Gender'] ?? '') === 'Male') ? 'selected' : ''; ?>>Male</option>
+                                        <option value="Female" <?php echo ((string)($input['Gender'] ?? '') === 'Female') ? 'selected' : ''; ?>>Female</option>
+                                        <option value="Non-binary" <?php echo ((string)($input['Gender'] ?? '') === 'Non-binary') ? 'selected' : ''; ?>>Non-binary</option>
+                                        <option value="Prefer not to say" <?php echo ((string)($input['Gender'] ?? '') === 'Prefer not to say') ? 'selected' : ''; ?>>Prefer not to say</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="profile-row">
@@ -196,6 +210,16 @@
                                     <div class="profile-card__title">Relationship</div>
                                     <div class="profile-card__privacy">Family only</div>
                                 </div>
+
+                                <?php if ($mode === 'edit'): ?>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="ShareProfilePublicly" name="ShareProfilePublicly" value="1" <?php echo !empty($Model->Input['ShareProfilePublicly']) ? 'checked' : ''; ?> />
+                                            <label class="form-check-label" for="ShareProfilePublicly">Share my profile details (DOB, email, phone) in other users' family trees</label>
+                                        </div>
+                                        <div class="form-text">If unchecked, your email/phone/DOB will be masked when shown in other users' family trees.</div>
+                                    </div>
+                                <?php endif; ?>
 
                                 <div class="row g-3">
                                     <div class="col-md-6">
@@ -246,7 +270,13 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Partner gender</label>
-                                            <input name="PartnerGender" class="form-control" value="<?php echo htmlspecialchars((string)($input['PartnerGender'] ?? '')); ?>" />
+                                            <select name="PartnerGender" class="form-select">
+                                                <option value="">Select gender...</option>
+                                                <option value="Male" <?php echo ((string)($input['PartnerGender'] ?? '') === 'Male') ? 'selected' : ''; ?>>Male</option>
+                                                <option value="Female" <?php echo ((string)($input['PartnerGender'] ?? '') === 'Female') ? 'selected' : ''; ?>>Female</option>
+                                                <option value="Non-binary" <?php echo ((string)($input['PartnerGender'] ?? '') === 'Non-binary') ? 'selected' : ''; ?>>Non-binary</option>
+                                                <option value="Prefer not to say" <?php echo ((string)($input['PartnerGender'] ?? '') === 'Prefer not to say') ? 'selected' : ''; ?>>Prefer not to say</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -351,12 +381,11 @@
                     <div class="profile-family-grid">
                         <?php
                             $cards = array_slice($familyMembers, 0, 3);
-                            if (count($cards) === 0) {
-                                $cards = [];
-                            }
+                            $cards = $familyMembers;
+                            $linked = $Model->LinkedFamily ?? [];
                         ?>
 
-                        <?php if (empty($cards)): ?>
+                        <?php if (empty($cards) && empty($linked)): ?>
                             <div class="profile-family-card" style="grid-column: 1 / -1; min-height: 90px; display:flex; align-items:center; justify-content: space-between;">
                                 <div>
                                     <div class="profile-family-card__name">No family added yet</div>
@@ -364,20 +393,35 @@
                                 </div>
                                 <a class="btn btn-primary" href="/family">Add family member</a>
                             </div>
-                        <?php else: ?>
-                            <?php foreach ($cards as $m): ?>
-                                <?php
-                                    $mName = (string)($m['name'] ?? '');
-                                    $mRel = (string)($m['relation'] ?? '');
-                                    $mDob = trim((string)($m['birthdate'] ?? ''));
-                                ?>
-                                <div class="profile-family-card">
-                                    <div class="profile-family-card__name"><?php echo htmlspecialchars($mName); ?></div>
-                                    <div class="profile-family-card__rel"><?php echo htmlspecialchars($mRel); ?></div>
-                                    <div class="profile-family-card__date"><?php echo htmlspecialchars($mDob !== '' ? $mDob : ''); ?></div>
-                                </div>
-                            <?php endforeach; ?>
                         <?php endif; ?>
+
+                        <?php foreach ($cards as $m): ?>
+                            <?php
+                                $mName = (string)($m['name'] ?? '');
+                                $mRel = (string)($m['relation'] ?? '');
+                                $mDob = trim((string)($m['birthdate'] ?? ''));
+                            ?>
+                            <div class="profile-family-card">
+                                <div class="profile-family-card__name"><?php echo htmlspecialchars($mName); ?></div>
+                                <div class="profile-family-card__rel"><?php echo htmlspecialchars($mRel); ?></div>
+                                <div class="profile-family-card__date"><?php echo htmlspecialchars($mDob !== '' ? $mDob : ''); ?></div>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <?php foreach ($linked as $m): ?>
+                            <?php
+                                $mName = (string)($m['owner_name'] ?? '');
+                                $mRel = (string)($m['relation'] ?? '');
+                                $mDob = trim((string)($m['owner_dob'] ?? ''));
+                                $mEmail = (string)($m['owner_email'] ?? '');
+                            ?>
+                            <div class="profile-family-card bg-info-subtle">
+                                <div class="profile-family-card__name"><?php echo htmlspecialchars($mName); ?></div>
+                                <div class="profile-family-card__rel">Linked as: <?php echo htmlspecialchars($mRel); ?></div>
+                                <div class="profile-family-card__date">DOB: <?php echo htmlspecialchars($mDob !== '' ? $mDob : ''); ?></div>
+                                <?php if ($mEmail !== ''): ?><div class="profile-family-card__email">Email: <?php echo htmlspecialchars($mEmail); ?></div><?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
 
                     <div class="profile-actions">
@@ -488,6 +532,23 @@
                                 <div class="profile-item__value"><?php echo htmlspecialchars(trim($v) !== '' ? $v : '—'); ?></div>
                             </div>
                         <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Danger Zone - Delete Account -->
+                <div class="profile-card" style="margin-top: 14px; border: 1px solid rgba(220, 53, 69, 0.3); background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);">
+                    <div class="profile-card__head">
+                        <div class="profile-card__title" style="color: #dc3545;">⚠️ Danger Zone</div>
+                        <div class="profile-card__privacy">Permanent</div>
+                    </div>
+
+                    <div style="padding: 12px 0;">
+                        <p style="margin: 0 0 12px 0; color: #666; font-size: 0.9rem;">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                        <a href="/profile/delete" class="btn btn-outline-danger btn-sm">
+                            🗑️ Delete My Account
+                        </a>
                     </div>
                 </div>
             </div>

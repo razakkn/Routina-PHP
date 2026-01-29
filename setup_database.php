@@ -1,4 +1,14 @@
 <?php
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Set content type to plain text for readable output
+header('Content-Type: text/plain; charset=utf-8');
+
+echo "Starting database setup...\n";
+
 require_once __DIR__ . '/src/Config/Database.php';
 
 // Mock autoloader for single script execution
@@ -57,6 +67,7 @@ try {
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS country_of_origin TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS current_location TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS relationship_status TEXT DEFAULT 'single'");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS family_relation TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS partner_member_id BIGINT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS headline TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin TEXT");
@@ -72,6 +83,8 @@ try {
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_url TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        // Privacy opt-in: share profile fields with other users' family trees
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS share_profile_publicly BOOLEAN DEFAULT FALSE");
 
         // Password resets table
         echo "Creating password_resets table...\n";
@@ -140,7 +153,8 @@ try {
             insurance_policy_number TEXT,
             insurance_start_date TEXT,
             insurance_end_date TEXT,
-            insurance_notes TEXT
+            insurance_notes TEXT,
+            disposal_remarks TEXT
         )");
 
         echo "Creating vehicle vendors table...\n";
@@ -377,6 +391,7 @@ try {
         $db->exec("ALTER TABLE family_members ADD COLUMN IF NOT EXISTS no_email INTEGER DEFAULT 0");
         $db->exec("ALTER TABLE family_members ADD COLUMN IF NOT EXISTS mother_id BIGINT");
         $db->exec("ALTER TABLE family_members ADD COLUMN IF NOT EXISTS father_id BIGINT");
+        $db->exec("ALTER TABLE family_members ADD COLUMN IF NOT EXISTS spouse_member_id BIGINT");
         $db->exec("ALTER TABLE family_members ADD COLUMN IF NOT EXISTS created_at TEXT");
 
         // Best-effort: add missing buzz columns if upgrading an older DB
@@ -551,6 +566,8 @@ try {
             'facebook_url' => 'VARCHAR(255)',
             'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
         ];
+        // Add privacy opt-in column
+        $userColumns['share_profile_publicly'] = 'TINYINT(1) DEFAULT 0';
         foreach ($userColumns as $col => $type) {
             try {
                 $db->exec("ALTER TABLE users ADD COLUMN {$col} {$type}");
@@ -629,6 +646,7 @@ try {
             insurance_start_date VARCHAR(20),
             insurance_end_date VARCHAR(20),
             insurance_notes TEXT,
+            disposal_remarks TEXT,
             INDEX idx_vehicles_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
@@ -836,9 +854,22 @@ try {
             no_email TINYINT(1) DEFAULT 0,
             mother_id BIGINT,
             father_id BIGINT,
+            spouse_member_id BIGINT,
             created_at VARCHAR(30),
             INDEX idx_family_members_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Add spouse_member_id column for existing databases (MySQL)
+        try {
+            $db->exec("ALTER TABLE family_members ADD COLUMN spouse_member_id BIGINT");
+            echo "Added spouse_member_id column to family_members.\n";
+        } catch (\PDOException $e) {
+            // Column probably already exists - ignore
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                // Only log if it's not a duplicate column error
+                error_log("family_members spouse_member_id: " . $e->getMessage());
+            }
+        }
 
         echo "Creating buzz requests table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS buzz_requests (
@@ -1250,6 +1281,7 @@ try {
         no_email INTEGER DEFAULT 0,
         mother_id INTEGER,
         father_id INTEGER,
+        spouse_member_id INTEGER,
         created_at TEXT
     )");
 
@@ -1270,6 +1302,7 @@ try {
     $addFamilyColumn('no_email', 'INTEGER DEFAULT 0');
     $addFamilyColumn('mother_id', 'INTEGER');
     $addFamilyColumn('father_id', 'INTEGER');
+    $addFamilyColumn('spouse_member_id', 'INTEGER');
     $addFamilyColumn('created_at', 'TEXT');
 
     echo "Creating buzz requests table...\n";

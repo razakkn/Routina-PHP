@@ -139,7 +139,8 @@ class Vehicle
                 insurance_policy_number = :insurance_policy_number,
                 insurance_start_date = :insurance_start_date,
                 insurance_end_date = :insurance_end_date,
-                insurance_notes = :insurance_notes
+                insurance_notes = :insurance_notes,
+                disposal_remarks = :disposal_remarks
             WHERE id = :id AND user_id = :uid");
         return $stmt->execute([
             'uid' => $userId,
@@ -162,7 +163,8 @@ class Vehicle
             'insurance_policy_number' => $details['insurance_policy_number'] ?? null,
             'insurance_start_date' => $details['insurance_start_date'] ?? null,
             'insurance_end_date' => $details['insurance_end_date'] ?? null,
-            'insurance_notes' => $details['insurance_notes'] ?? null
+            'insurance_notes' => $details['insurance_notes'] ?? null,
+            'disposal_remarks' => $details['disposal_remarks'] ?? null
         ]);
     }
 

@@ -104,11 +104,11 @@ return [
     'db_port' => 3306,
     'db_name' => 'ezyro_40939469_routina',
     'db_user' => 'ezyro_40939469',
-    'db_pass' => 'P@ssph6ase',
+   'db_pass' => 'your_database_password',
 
     // Google OAuth (update redirect URI)
     'google_client_id' => 'your-google-client-id',
-    'google_client_secret' => 'your-google-client-secret',
+   'google_client_secret' => 'your-google-client-secret',
     'google_redirect_uri' => 'https://your-subdomain.ezyro.com/auth/google/callback',
 
     // Email

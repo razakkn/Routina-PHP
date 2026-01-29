@@ -21,9 +21,11 @@
         $mother = ['mother','mom'];
         $father = ['father','dad'];
         $parents = ['parent'];
-        $siblings = ['sibling','brother','sister'];
+        $siblings = ['sibling','brother','sister','half-sibling','step-sibling'];
         $grandparents = ['grandparent','grandfather','grandmother'];
         $grandchildren = ['grandchild','grandson','granddaughter'];
+        $inlaws = ['father-in-law','mother-in-law','brother-in-law','sister-in-law','son-in-law','daughter-in-law','in-law'];
+        $extended = ['cousin','uncle','aunt','nephew','niece','step-parent','step-child','godparent','godchild','guardian'];
 
         if (in_array($r, $partner, true)) return 'partner';
         if (in_array($r, $children, true)) return 'children';
@@ -33,6 +35,8 @@
         if (in_array($r, $siblings, true)) return 'siblings';
         if (in_array($r, $grandparents, true)) return 'grandparents';
         if (in_array($r, $grandchildren, true)) return 'grandchildren';
+        if (in_array($r, $inlaws, true)) return 'inlaws';
+        if (in_array($r, $extended, true)) return 'extended';
         return 'others';
     };
 
@@ -45,6 +49,8 @@
         'siblings' => [],
         'grandparents' => [],
         'grandchildren' => [],
+        'inlaws' => [],
+        'extended' => [],
         'others' => []
     ];
 
@@ -62,10 +68,12 @@
         'siblings' => 'Siblings',
         'grandparents' => 'Grandparents',
         'grandchildren' => 'Grandchildren',
+        'inlaws' => 'In-Laws',
+        'extended' => 'Extended Family',
         'others' => 'Others'
     ];
 
-    $laneOrder = ['partner', 'mother', 'father', 'parents', 'children', 'siblings', 'grandparents', 'grandchildren', 'others'];
+    $laneOrder = ['partner', 'mother', 'father', 'parents', 'children', 'siblings', 'inlaws', 'grandparents', 'grandchildren', 'extended', 'others'];
 
     $byId = [];
     foreach (($members ?? []) as $m) {
@@ -145,20 +153,49 @@
                         <div class="col-md-6">
                             <label class="form-label">Relationship</label>
                             <select name="relation" class="form-select" required>
-                                <option value="Spouse">Spouse</option>
-                                <option value="Boyfriend">Boyfriend</option>
-                                <option value="Girlfriend">Girlfriend</option>
-                                <option value="Child">Child</option>
-                                <option value="Mother">Mother</option>
-                                <option value="Father">Father</option>
-                                <option value="Parent">Parent</option>
-                                <option value="Sibling">Sibling</option>
-                                <option value="Grandparent">Grandparent</option>
-                                <option value="Grandchild">Grandchild</option>
-                                <option value="Cousin">Cousin</option>
-                                <option value="Uncle">Uncle</option>
-                                <option value="Aunt">Aunt</option>
-                                <option value="Other">Other</option>
+                                <optgroup label="Immediate Family">
+                                    <option value="Spouse">Spouse</option>
+                                    <option value="Boyfriend">Boyfriend</option>
+                                    <option value="Girlfriend">Girlfriend</option>
+                                    <option value="Child">Child</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Brother">Brother</option>
+                                    <option value="Sister">Sister</option>
+                                    <option value="Sibling">Sibling</option>
+                                </optgroup>
+                                <optgroup label="Extended Family">
+                                    <option value="Grandparent">Grandparent</option>
+                                    <option value="Grandfather">Grandfather</option>
+                                    <option value="Grandmother">Grandmother</option>
+                                    <option value="Grandchild">Grandchild</option>
+                                    <option value="Grandson">Grandson</option>
+                                    <option value="Granddaughter">Granddaughter</option>
+                                    <option value="Cousin">Cousin</option>
+                                    <option value="Uncle">Uncle</option>
+                                    <option value="Aunt">Aunt</option>
+                                    <option value="Nephew">Nephew</option>
+                                    <option value="Niece">Niece</option>
+                                </optgroup>
+                                <optgroup label="In-Laws">
+                                    <option value="Father-in-law">Father-in-law</option>
+                                    <option value="Mother-in-law">Mother-in-law</option>
+                                    <option value="Brother-in-law">Brother-in-law</option>
+                                    <option value="Sister-in-law">Sister-in-law</option>
+                                    <option value="Son-in-law">Son-in-law</option>
+                                    <option value="Daughter-in-law">Daughter-in-law</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option value="Step-parent">Step-parent</option>
+                                    <option value="Step-child">Step-child</option>
+                                    <option value="Step-sibling">Step-sibling</option>
+                                    <option value="Half-sibling">Half-sibling</option>
+                                    <option value="Godparent">Godparent</option>
+                                    <option value="Godchild">Godchild</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Other">Other</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -199,11 +236,15 @@
                         </div>
                     </div>
 
+                    <!-- Family Connections Matrix -->
+                    <div class="card-kicker mt-3 mb-2" style="font-size: 0.85rem;">Family Connections</div>
+                    <div class="form-text mb-2">Link this person to other family members to build the family tree matrix.</div>
+                    
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Mother (optional)</label>
+                            <label class="form-label">Mother</label>
                             <select name="mother_id" class="form-select">
-                                <option value="">—</option>
+                                <option value="">— Select mother —</option>
                                 <?php foreach (($members ?? []) as $opt): ?>
                                     <?php $optId = (int)($opt['id'] ?? 0); ?>
                                     <?php if ($optId > 0): ?>
@@ -213,9 +254,9 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Father (optional)</label>
+                            <label class="form-label">Father</label>
                             <select name="father_id" class="form-select">
-                                <option value="">—</option>
+                                <option value="">— Select father —</option>
                                 <?php foreach (($members ?? []) as $opt): ?>
                                     <?php $optId = (int)($opt['id'] ?? 0); ?>
                                     <?php if ($optId > 0): ?>
@@ -224,6 +265,20 @@
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Spouse / Partner</label>
+                        <select name="spouse_member_id" class="form-select">
+                            <option value="">— Select spouse/partner —</option>
+                            <?php foreach (($members ?? []) as $opt): ?>
+                                <?php $optId = (int)($opt['id'] ?? 0); ?>
+                                <?php if ($optId > 0): ?>
+                                    <option value="<?php echo $optId; ?>"><?php echo htmlspecialchars((string)($opt['name'] ?? '')); ?><?php echo !empty($opt['relation']) ? ' — ' . htmlspecialchars((string)$opt['relation']) : ''; ?></option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text">If this person is married, select their spouse from your family tree.</div>
                     </div>
 
                     <div class="mb-3">
@@ -287,8 +342,10 @@
                                                     $mNoEmail = !empty($m['no_email']);
                                                     $mMotherId = (int)($m['mother_id'] ?? 0);
                                                     $mFatherId = (int)($m['father_id'] ?? 0);
+                                                    $mSpouseId = (int)($m['spouse_member_id'] ?? 0);
                                                     $mMotherName = ($mMotherId > 0 && isset($byId[$mMotherId])) ? (string)$byId[$mMotherId] : '';
                                                     $mFatherName = ($mFatherId > 0 && isset($byId[$mFatherId])) ? (string)$byId[$mFatherId] : '';
+                                                    $mSpouseName = ($mSpouseId > 0 && isset($byId[$mSpouseId])) ? (string)$byId[$mSpouseId] : '';
                                                     $mId = (int)($m['id'] ?? 0);
                                                     $match = ($mId > 0 && isset($matches[$mId])) ? $matches[$mId] : null;
                                                     $isMatch = is_array($match);
@@ -308,6 +365,9 @@
                                                         <?php if ($mSide !== '') echo $chip($mSide . ' side'); ?>
                                                         <?php if ($mDob !== '') echo $chip('DOB ' . $mDob); ?>
                                                         <?php if ($mDod !== '') echo $chip('DOD ' . $mDod); ?>
+                                                        <?php if (!empty($m['is_foreign'])): ?>
+                                                            <?php echo $chip('Linked from: ' . ($m['linked_owner_name'] ?? '')); ?>
+                                                        <?php endif; ?>
                                                         <?php if ($isMatch): ?>
                                                             <span class="family-badge" title="This contact matches a Routina user">On Routina</span>
                                                         <?php endif; ?>
@@ -316,6 +376,9 @@
                                                     <div class="family-node__secondary">
                                                         <div><?php echo htmlspecialchars($mPhone !== '' ? $mPhone : ''); ?></div>
                                                         <div><?php echo htmlspecialchars($mNoEmail ? 'No email' : $mEmail); ?></div>
+                                                        <?php if ($mSpouseName !== ''): ?>
+                                                            <div class="text-primary"><?php echo htmlspecialchars('Spouse: ' . $mSpouseName); ?></div>
+                                                        <?php endif; ?>
                                                         <?php if ($mMotherName !== ''): ?>
                                                             <div><?php echo htmlspecialchars('Mother: ' . $mMotherName); ?></div>
                                                         <?php endif; ?>
@@ -496,14 +559,19 @@
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-end">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary" data-family-edit-toggle="<?php echo $memberId; ?>">Edit</button>
-                                                <form method="post" action="/family/delete?id=<?php echo $memberId; ?>" style="display:inline;" onsubmit="return confirm('Delete this family member?');">
-                                                    <?= csrf_field() ?>
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                                </form>
+                                                <?php if ((int)($m['user_id'] ?? 0) === (int)($_SESSION['user_id'] ?? 0)): ?>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-family-edit-toggle="<?php echo $memberId; ?>">Edit</button>
+                                                    <form method="post" action="/family/delete?id=<?php echo $memberId; ?>" style="display:inline;" onsubmit="return confirm('Delete this family member?');">
+                                                        <?= csrf_field() ?>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <div class="text-muted">Linked from <?php echo htmlspecialchars((string)($m['linked_owner_name'] ?? 'another user')); ?></div>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
 
+                                        <?php if ((int)($m['user_id'] ?? 0) === (int)($_SESSION['user_id'] ?? 0)): ?>
                                         <tr data-family-edit-row="<?php echo $memberId; ?>" style="display: none;">
                                             <td colspan="10">
                                                 <div class="border rounded-3 p-3" style="background: rgba(0,0,0,0.02);">
@@ -615,6 +683,9 @@
                                                 </div>
                                             </td>
                                         </tr>
+                                        <?php else: ?>
+                                            <!-- foreign/linked member: no edit row -->
+                                        <?php endif; ?>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>

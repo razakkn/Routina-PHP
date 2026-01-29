@@ -4,7 +4,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', '0'); // Don't show errors to users
 ini_set('log_errors', '1');
-// ini_set('error_log', __DIR__ . '/../storage/error.log'); // Use default PHP error log
+ini_set('error_log', __DIR__ . '/../storage/error.log');
 
 // Global exception handler
 set_exception_handler(function ($e) {
@@ -67,42 +67,23 @@ session_set_cookie_params([
     'path' => '/',
     'secure' => $secureCookie,
     'httponly' => true,
-    'samesite' => $secureCookie ? 'None' : 'Lax'
+    'samesite' => 'Lax'
 ]);
 
 // Start Session
 session_start();
 
 // Basic security headers (parity with ASP.NET CSP middleware)
-// NOTE: Some third-party libs (or builds) may use `eval`/`new Function` for dynamic code.
-// If you see "Evaluating a string as JavaScript violates the CSP" in the browser console,
-// consider the security tradeoffs before enabling 'unsafe-eval'. For development or when
-// using a library that requires it, we add 'unsafe-eval' here.
 $csp = "default-src 'self'; "
-    . "script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com; "
+    . "script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com; "
     . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     . "img-src 'self' data: blob:; "
-    . "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com https://fonts.googleapis.com; "
+    . "font-src 'self' data: https://cdn.jsdelivr.net; "
     . "connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'";
 header('Content-Security-Policy: ' . $csp);
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-
-// Simple static helper: serve /galaxy or /galaxy.html directly from public folder for demo preview
-$reqPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if ($reqPath === '/galaxy' || $reqPath === '/galaxy.html') {
-    $file = __DIR__ . '/galaxy.html';
-    if (file_exists($file)) {
-        http_response_code(200);
-        header('Content-Type: text/html; charset=utf-8');
-        echo file_get_contents($file);
-    } else {
-        http_response_code(404);
-        echo 'Galaxy demo file not found on server.';
-    }
-    exit;
-}
 
 function app_config($key = null, $default = null) {
     static $config = null;
@@ -566,73 +547,6 @@ if ($requestUri === '/api/check-routina-id') {
     json_response(['available' => $available]);
 }
 
-// API: Debug family members with emails (temporary diagnostic)
-if ($requestUri === '/api/debug-family') {
-    require_login();
-    $db = \Routina\Config\Database::getConnection();
-    
-    // Get all family members with emails
-    $stmt = $db->query("SELECT fm.id, fm.user_id, fm.name, fm.email, fm.phone, fm.relation, fm.no_email, u.display_name as owner_name 
-                        FROM family_members fm 
-                        JOIN users u ON fm.user_id = u.id 
-                        WHERE fm.email IS NOT NULL AND fm.email != '' 
-                        ORDER BY fm.id DESC LIMIT 20");
-    $familyWithEmail = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    
-    // Mask emails for security
-    foreach ($familyWithEmail as &$row) {
-        if (!empty($row['email'])) {
-            $row['email_hash'] = substr(hash('sha256', strtolower(trim($row['email']))), 0, 12);
-            $row['email'] = '***@***';
-        }
-    }
-    
-    // Get count of all family members
-    $countStmt = $db->query("SELECT COUNT(*) as total FROM family_members");
-    $total = (int)($countStmt->fetch()['total'] ?? 0);
-    
-    json_response([
-        'total_family_members' => $total,
-        'family_with_email' => $familyWithEmail,
-        'note' => 'Emails are masked. Use email_hash to compare.'
-    ]);
-}
-
-// API: Manually trigger auto-populate for current user (temporary diagnostic)
-if ($requestUri === '/api/trigger-autofill') {
-    require_login();
-    $userId = (int)$_SESSION['user_id'];
-    $db = \Routina\Config\Database::getConnection();
-    
-    // Get current user's email
-    $stmt = $db->prepare("SELECT email, phone FROM users WHERE id = :id");
-    $stmt->execute(['id' => $userId]);
-    $user = $stmt->fetch();
-    
-    if (!$user || empty($user['email'])) {
-        json_response(['success' => false, 'error' => 'No email found for current user']);
-    }
-    
-    $email = $user['email'];
-    $phone = $user['phone'] ?? null;
-    
-    // Call the auto-populate function
-    $result = \Routina\Services\AuthService::autoPopulateFromFamilyTree($userId, $email, $phone);
-    
-    // Get updated user data
-    $stmt = $db->prepare("SELECT display_name, dob, gender, phone, relationship_status FROM users WHERE id = :id");
-    $stmt->execute(['id' => $userId]);
-    $updated = $stmt->fetch();
-    
-    json_response([
-        'success' => $result,
-        'user_id' => $userId,
-        'email_hash' => substr(hash('sha256', strtolower(trim($email))), 0, 12),
-        'updated_fields' => $updated,
-        'note' => $result ? 'Profile was updated from family tree data' : 'No updates applied (either no match found or fields already filled)'
-    ]);
-}
-
 // 1. Root / Landing - Redirect to login
 if ($requestUri === '/' || $requestUri === '/index.php') {
     if (isset($_SESSION['user_id'])) {
@@ -909,20 +823,6 @@ if ($requestUri === '/admin/metrics') {
     require_admin();
     $controller = new \Routina\Controllers\AdminController();
     $controller->metrics();
-    exit;
-}
-
-if ($requestUri === '/admin/autofill') {
-    require_admin();
-    $controller = new \Routina\Controllers\AdminController();
-    $controller->autofillDiagnostics();
-    exit;
-}
-
-if ($requestUri === '/admin/diagnostics') {
-    require_admin();
-    $controller = new \Routina\Controllers\AdminController();
-    $controller->diagnostics();
     exit;
 }
 

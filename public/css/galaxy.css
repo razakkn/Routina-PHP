@@ -1,0 +1,24 @@
+/* galaxy.css - demo-only styles */
+:root{ --base:#05060a; --accent:#03e9f4; --muted: rgba(255,255,255,0.06); }
+html,body{height:100%;margin:0;font-family: 'Poppins', system-ui, sans-serif;background:linear-gradient(180deg,#0b1220 0%, #05060a 100%);} 
+.demo-shell{height:100vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#e7fff6}
+
+/* stars layers */
+#galaxy-stars::before, #galaxy-stars::after{content:'';position:absolute;inset:0;background-repeat:repeat;pointer-events:none}
+#galaxy-stars::before{background-image:radial-gradient(2px 2px at 10px 20px,#fff 40%, transparent 41%), radial-gradient(1px 1px at 40px 90px, #fff 40%, transparent 41%); opacity:0.9; transform:translateZ(0); animation: moveStars 120s linear infinite; mix-blend-mode:screen}
+#galaxy-stars::after{background-image:radial-gradient(1px 1px at 130px 60px, #fff 40%, transparent 41%), radial-gradient(2px 2px at 230px 20px,#fff 40%, transparent 41%); opacity:0.6; animation: moveStars 200s linear infinite; mix-blend-mode:screen}
+
+@keyframes moveStars { from { transform: translateY(0) } to { transform: translateY(-1600px) } }
+
+/* nebula */
+#galaxy-nebula{ position:absolute; inset:-20% -10% -20% -10%; background: radial-gradient(40% 40% at 20% 40%, rgba(80, 160, 255, 0.12) 0%, rgba(80,160,255,0.04) 10%, transparent 30%), radial-gradient(35% 35% at 70% 60%, rgba(255, 140, 100, 0.12) 0%, rgba(255,140,100,0.03) 12%, transparent 30%), radial-gradient(60% 30% at 50% 40%, rgba(255,255,255,0.02), transparent 45%); filter: blur(28px) contrast(1.06) saturate(1.1); transform: translateZ(0); animation: nebRotate 30s linear infinite; mix-blend-mode: screen; opacity:0.95 }
+@keyframes nebRotate { from{ transform: rotate(0deg) } to { transform: rotate(360deg) } }
+
+/* demo card */
+.demo-card{ position:relative; z-index:30; max-width:540px; text-align:center; padding:32px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; border:1px solid rgba(255,255,255,0.04); box-shadow:0 20px 50px rgba(0,0,0,0.6) }
+.demo-card h1{ margin:0 0 12px; color:#eafff6}
+.demo-card p{ margin:0 0 16px; color:rgba(230,255,240,0.8) }
+.btn{ display:inline-block; background:var(--accent); color:#022; padding:10px 16px; border-radius:8px; text-decoration:none; font-weight:600 }
+
+/* responsive */
+@media (max-width:640px){ .demo-card{ margin: 20px; } .demo-shell{ padding:20px }}

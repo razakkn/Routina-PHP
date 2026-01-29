@@ -3,12 +3,412 @@
 namespace Routina\Services;
 
 use Routina\Config\Database;
+use Routina\Models\Family;
 
 /**
  * Authentication service for user registration, login, and identity management.
  */
 class AuthService
 {
+    /**
+     * Cache of users table columns for the active DB connection.
+     * @var array<string, bool>|null
+     */
+    private static ?array $usersColumnMap = null;
+
+    /**
+     * @return array<string, bool> map of columnName => true
+     */
+    private static function getUsersColumnMap(): array
+    {
+        if (self::$usersColumnMap !== null) {
+            return self::$usersColumnMap;
+        }
+
+        $db = Database::getConnection();
+        $cols = [];
+
+        try {
+            $driver = (string)$db->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        } catch (\Throwable $e) {
+            $driver = '';
+        }
+
+        try {
+            if ($driver === 'mysql') {
+                $stmt = $db->query('DESCRIBE users');
+                foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+                    $name = (string)($row['Field'] ?? '');
+                    if ($name !== '') $cols[$name] = true;
+                }
+            } elseif ($driver === 'sqlite') {
+                $stmt = $db->query("PRAGMA table_info('users')");
+                foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+                    $name = (string)($row['name'] ?? '');
+                    if ($name !== '') $cols[$name] = true;
+                }
+            } elseif ($driver === 'pgsql') {
+                $stmt = $db->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = 'users'");
+                $stmt->execute();
+                foreach ($stmt->fetchAll() as $row) {
+                    $name = (string)($row['column_name'] ?? '');
+                    if ($name !== '') $cols[$name] = true;
+                }
+            }
+        } catch (\Throwable $e) {
+            // If introspection fails (permissions / driver quirks), fall back to common columns.
+            $cols = [
+                'id' => true,
+                'email' => true,
+                'phone' => true,
+                'display_name' => true,
+                'dob' => true,
+                'gender' => true,
+                'relationship_status' => true,
+                'routina_id' => true,
+                'google_id' => true,
+            ];
+        }
+
+        self::$usersColumnMap = $cols;
+        return self::$usersColumnMap;
+    }
+
+    private static function hasUserColumn(string $column): bool
+    {
+        $map = self::getUsersColumnMap();
+        return isset($map[$column]);
+    }
+
+    /**
+     * Normalize phone to digits only, and use last 10 digits for tolerant matching.
+     */
+    private static function phoneMatchKey(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', (string)$phone);
+        if (!is_string($digits) || $digits === '') {
+            return '';
+        }
+        if (strlen($digits) >= 10) {
+            return substr($digits, -10);
+        }
+        return $digits;
+    }
+
+    private static function maskEmail(?string $email): string
+    {
+        $e = strtolower(trim((string)$email));
+        if ($e === '') return '';
+        return substr(hash('sha256', $e), 0, 12);
+    }
+
+    private static function maskPhone(?string $phone): string
+    {
+        $key = self::phoneMatchKey((string)$phone);
+        if ($key === '') return '';
+        $len = strlen($key);
+        return ($len <= 4) ? $key : (str_repeat('*', $len - 4) . substr($key, -4));
+    }
+
+    /**
+     * Execute an UPDATE users ... for the provided update expressions and parameters.
+     * Automatically filters out columns that do not exist.
+     *
+     * @param int $userId
+     * @param array<string, mixed> $candidateUpdates column => value
+     */
+    private static function updateUserColumns(int $userId, array $candidateUpdates): bool
+    {
+        $db = Database::getConnection();
+
+        if ($userId <= 0 || empty($candidateUpdates)) {
+            return false;
+        }
+
+        $updates = [];
+        $params = ['id' => $userId];
+
+        foreach ($candidateUpdates as $col => $val) {
+            if (!self::hasUserColumn((string)$col)) {
+                continue;
+            }
+            $paramKey = 'c_' . preg_replace('/[^a-zA-Z0-9_]/', '_', (string)$col);
+            $updates[] = "{$col} = :{$paramKey}";
+            $params[$paramKey] = $val;
+        }
+
+        if (empty($updates)) {
+            return false;
+        }
+
+        $attempts = 0;
+        while (true) {
+            $attempts++;
+            $sql = 'UPDATE users SET ' . implode(', ', $updates) . ' WHERE id = :id';
+            try {
+                $stmt = $db->prepare($sql);
+                return (bool)$stmt->execute($params);
+            } catch (\PDOException $e) {
+                $missing = self::extractMissingColumnName($e);
+                if ($missing === null || $attempts >= 3) {
+                    throw $e;
+                }
+
+                // Drop the missing column from this update and retry.
+                $missing = (string)$missing;
+                $filteredUpdates = [];
+                $filteredParams = ['id' => $userId];
+                foreach ($candidateUpdates as $col => $val) {
+                    if ((string)$col === $missing) {
+                        continue;
+                    }
+                    if (!self::hasUserColumn((string)$col)) {
+                        continue;
+                    }
+                    $paramKey = 'c_' . preg_replace('/[^a-zA-Z0-9_]/', '_', (string)$col);
+                    $filteredUpdates[] = "{$col} = :{$paramKey}";
+                    $filteredParams[$paramKey] = $val;
+                }
+                if (empty($filteredUpdates)) {
+                    return false;
+                }
+                $updates = $filteredUpdates;
+                $params = $filteredParams;
+            }
+        }
+    }
+
+    /**
+     * Returns missing column name for "unknown column"-style errors, else null.
+     */
+    private static function extractMissingColumnName(\PDOException $e): ?string
+    {
+        $msg = strtolower($e->getMessage());
+
+        // MySQL: Unknown column 'dob' in 'field list'
+        if (strpos($msg, 'unknown column') !== false) {
+            if (preg_match("/unknown column\s+'([^']+)'/i", $e->getMessage(), $m)) {
+                return $m[1] ?? null;
+            }
+        }
+
+        // SQLite: no such column: dob
+        if (strpos($msg, 'no such column') !== false) {
+            if (preg_match('/no such column:\s*([a-zA-Z0-9_]+)/i', $e->getMessage(), $m)) {
+                return $m[1] ?? null;
+            }
+        }
+
+        // Postgres: column "dob" does not exist
+        if (strpos($msg, 'does not exist') !== false && strpos($msg, 'column') !== false) {
+            if (preg_match('/column\s+"([^"]+)"\s+does not exist/i', $e->getMessage(), $m)) {
+                return $m[1] ?? null;
+            }
+        }
+
+        // SQLSTATE 42S22 is "Column not found" on many drivers
+        if ((string)$e->getCode() === '42S22') {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Auto-populate a newly registered user's profile from family member data.
+     * When someone signs up with an email that exists in another user's family tree,
+     * their profile gets pre-filled with that information.
+     * 
+     * @param int $userId The new user's ID
+     * @param string $email The user's email address
+     * @param string|null $phone The user's phone number (optional)
+     * @return bool True if any data was populated
+     */
+    public static function autoPopulateFromFamilyTree(int $userId, string $email, ?string $phone = null): bool
+    {
+        $db = Database::getConnection();
+
+        $trace = bin2hex(random_bytes(3));
+        error_log('AUTOFILL[new] trace=' . $trace . ' user=' . $userId . ' emailHash=' . self::maskEmail($email) . ' phone=' . self::maskPhone($phone));
+        
+        // First try to find by email
+        $familyData = Family::findAllByEmail($email);
+        
+        // If no email match and phone provided, try phone
+        if (empty($familyData) && $phone !== null && $phone !== '') {
+            $familyData = Family::findAllByPhone($phone);
+        }
+        
+        if (empty($familyData)) {
+            error_log('AUTOFILL[new] trace=' . $trace . ' no family match');
+            return false;
+        }
+        
+        // Use the most recent entry (first in the array since ordered by created_at DESC)
+        $familyMember = $familyData[0];
+        
+
+        // Map family member fields to user profile fields
+        $candidate = [];
+        if (!empty($familyMember['name'])) {
+            $candidate['display_name'] = $familyMember['name'];
+        }
+        if (!empty($familyMember['birthdate'])) {
+            $candidate['dob'] = $familyMember['birthdate'];
+        }
+        if (!empty($familyMember['gender'])) {
+            $candidate['gender'] = $familyMember['gender'];
+        }
+        if (!empty($familyMember['phone'])) {
+            $candidate['phone'] = $familyMember['phone'];
+        }
+        if (!empty($familyMember['relation'])) {
+            $candidate['family_relation'] = $familyMember['relation'];
+        }
+
+        $relation = strtolower(trim((string)($familyMember['relation'] ?? '')));
+        if (in_array($relation, ['spouse', 'wife', 'husband'], true)) {
+            $candidate['relationship_status'] = 'married';
+        } elseif (in_array($relation, ['girlfriend', 'boyfriend'], true)) {
+            $candidate['relationship_status'] = 'in_relationship';
+        }
+
+        if (empty($candidate)) {
+            error_log('AUTOFILL[new] trace=' . $trace . ' match found but no candidate fields');
+            return false;
+        }
+
+        $result = self::updateUserColumns($userId, $candidate);
+        if ($result) {
+            $ownerId = (int)($familyMember['owner_user_id'] ?? 0);
+            error_log("Auto-populated profile for user {$userId} from family member data" . ($ownerId > 0 ? " (owner: {$ownerId})" : ''));
+        } else {
+            error_log("Auto-populate skipped for user {$userId}: no updatable columns matched current schema");
+        }
+
+        return $result;
+    }
+
+    /**
+     * Auto-populate an existing user's profile from family member data.
+     * Called when someone adds a family member with an email that belongs to an existing user.
+     * 
+     * @param array $familyMemberData The family member data being added/updated
+     * @return bool True if any data was populated
+     */
+    public static function populateExistingUserFromFamilyData(array $familyMemberData): bool
+    {
+        $email = strtolower(trim((string)($familyMemberData['email'] ?? '')));
+        $phone = trim((string)($familyMemberData['phone'] ?? ''));
+
+        $trace = bin2hex(random_bytes(3));
+        error_log('AUTOFILL[existing] trace=' . $trace . ' emailHash=' . self::maskEmail($email) . ' phone=' . self::maskPhone($phone));
+        
+        if ($email === '' && $phone === '') {
+            error_log('AUTOFILL[existing] trace=' . $trace . ' aborted: no email/phone');
+            return false;
+        }
+        
+        $db = Database::getConnection();
+        $existingUser = null;
+
+        // Try to find existing user by email
+        if ($email !== '') {
+            $existingUser = self::findByEmail($email);
+        }
+
+        // If not found by email, try by phone (tolerant matching)
+        if (!$existingUser && $phone !== '') {
+            $existingUser = self::findByPhone($phone);
+            if (!$existingUser && self::hasUserColumn('phone')) {
+                $phoneKey = self::phoneMatchKey($phone);
+                if ($phoneKey !== '') {
+                    $stmt = $db->query("SELECT id, email, phone, display_name FROM users WHERE phone IS NOT NULL AND phone <> ''");
+                    foreach (($stmt ? $stmt->fetchAll() : []) as $u) {
+                        $uKey = self::phoneMatchKey((string)($u['phone'] ?? ''));
+                        if ($uKey !== '' && $uKey === $phoneKey) {
+                            $existingUser = $u;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!$existingUser) {
+            error_log('AUTOFILL[existing] trace=' . $trace . ' no matching user found');
+            return false;
+        }
+        
+        $userId = (int)$existingUser['id'];
+        error_log('AUTOFILL[existing] trace=' . $trace . ' matchedUser=' . $userId);
+        
+        // Get current user data to check which fields are empty (only select columns that exist)
+        $selectCols = [];
+        foreach (['display_name', 'dob', 'gender', 'phone', 'relationship_status'] as $col) {
+            if (self::hasUserColumn($col)) {
+                $selectCols[] = $col;
+            }
+        }
+        if (empty($selectCols)) {
+            error_log('AUTOFILL[existing] trace=' . $trace . ' aborted: no selectable columns');
+            return false;
+        }
+        $stmt = $db->prepare('SELECT ' . implode(', ', $selectCols) . ' FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $currentData = $stmt->fetch();
+        
+        if (!$currentData) {
+            error_log('AUTOFILL[existing] trace=' . $trace . ' aborted: could not load current user row');
+            return false;
+        }
+        
+
+        // Build update data - only populate empty fields
+        $candidate = [];
+
+        if (self::hasUserColumn('display_name') && empty($currentData['display_name']) && !empty($familyMemberData['name'])) {
+            $candidate['display_name'] = $familyMemberData['name'];
+        }
+        if (self::hasUserColumn('dob') && empty($currentData['dob']) && !empty($familyMemberData['birthdate'])) {
+            $candidate['dob'] = $familyMemberData['birthdate'];
+        }
+        if (self::hasUserColumn('gender') && empty($currentData['gender']) && !empty($familyMemberData['gender'])) {
+            $candidate['gender'] = $familyMemberData['gender'];
+        }
+        if (self::hasUserColumn('phone') && empty($currentData['phone']) && !empty($familyMemberData['phone'])) {
+            $candidate['phone'] = $familyMemberData['phone'];
+        }
+        if (self::hasUserColumn('family_relation') && empty($currentData['family_relation']) && !empty($familyMemberData['relation'])) {
+            $candidate['family_relation'] = $familyMemberData['relation'];
+        }
+
+        // relationship_status: only set when empty OR when it is the default and a stronger signal exists
+        $curRel = (string)($currentData['relationship_status'] ?? '');
+        $relation = strtolower(trim((string)($familyMemberData['relation'] ?? '')));
+        $isDefaultSingle = ($curRel === 'single');
+        if (self::hasUserColumn('relationship_status') && (empty($curRel) || $isDefaultSingle)) {
+            if (in_array($relation, ['spouse', 'wife', 'husband'], true)) {
+                $candidate['relationship_status'] = 'married';
+            } elseif (in_array($relation, ['girlfriend', 'boyfriend'], true)) {
+                $candidate['relationship_status'] = 'in_relationship';
+            }
+        }
+
+        if (empty($candidate)) {
+            error_log('AUTOFILL[existing] trace=' . $trace . ' no candidate updates (likely fields already set or missing family data)');
+            return false;
+        }
+
+        $result = self::updateUserColumns($userId, $candidate);
+        if ($result) {
+            error_log("Populated existing user {$userId} profile from family member data");
+        } else {
+            error_log('AUTOFILL[existing] trace=' . $trace . ' update returned false');
+        }
+        return $result;
+    }
+
     /**
      * Check if an email exists in users or alternative_emails tables.
      * 
@@ -22,36 +422,70 @@ class AuthService
         $email = strtolower(trim($email));
 
         // Check main users table
-        $sql = "SELECT id, email, routina_id, display_name FROM users WHERE LOWER(email) = :email";
-        if ($excludeUserId) {
-            $sql .= " AND id != :exclude";
-        }
-        $stmt = $db->prepare($sql);
         $params = ['email' => $email];
         if ($excludeUserId) {
             $params['exclude'] = $excludeUserId;
         }
-        $stmt->execute($params);
-        $user = $stmt->fetch();
+
+        $sql = "SELECT id, email, routina_id, display_name FROM users WHERE LOWER(email) = :email";
+        if ($excludeUserId) {
+            $sql .= " AND id != :exclude";
+        }
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $user = $stmt->fetch();
+        } catch (\PDOException $e) {
+            // Backward-compatible: some deployments may not have routina_id
+            $msg = strtolower($e->getMessage());
+            if (strpos($msg, 'unknown column') !== false || strpos($msg, 'no such column') !== false || strpos($msg, 'does not exist') !== false || $e->getCode() === '42S22') {
+                $sql = "SELECT id, email, display_name FROM users WHERE LOWER(email) = :email";
+                if ($excludeUserId) {
+                    $sql .= " AND id != :exclude";
+                }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+                $user = $stmt->fetch();
+                if (is_array($user)) {
+                    $user['routina_id'] = null;
+                }
+            } else {
+                throw $e;
+            }
+        }
         
         if ($user) {
             return $user;
         }
 
-        // Check alternative emails table
-        $sql = "SELECT user_id, email FROM user_alternative_emails WHERE LOWER(email) = :email";
-        if ($excludeUserId) {
-            $sql .= " AND user_id != :exclude";
+        // Check alternative emails table (best-effort)
+        try {
+            $sql = "SELECT user_id, email FROM user_alternative_emails WHERE LOWER(email) = :email";
+            if ($excludeUserId) {
+                $sql .= " AND user_id != :exclude";
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $alt = $stmt->fetch();
+        } catch (\PDOException $e) {
+            $alt = null;
         }
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $alt = $stmt->fetch();
 
         if ($alt) {
             // Get the actual user
-            $stmt = $db->prepare("SELECT id, email, routina_id, display_name FROM users WHERE id = :id");
-            $stmt->execute(['id' => $alt['user_id']]);
-            return $stmt->fetch() ?: null;
+            try {
+                $stmt = $db->prepare("SELECT id, email, routina_id, display_name FROM users WHERE id = :id");
+                $stmt->execute(['id' => $alt['user_id']]);
+                $u = $stmt->fetch();
+            } catch (\PDOException $e) {
+                $stmt = $db->prepare("SELECT id, email, display_name FROM users WHERE id = :id");
+                $stmt->execute(['id' => $alt['user_id']]);
+                $u = $stmt->fetch();
+                if (is_array($u)) {
+                    $u['routina_id'] = null;
+                }
+            }
+            return $u ?: null;
         }
 
         return null;
@@ -67,12 +501,18 @@ class AuthService
     public static function findByPhone(string $phone, ?int $excludeUserId = null): ?array
     {
         $db = Database::getConnection();
-        $phone = preg_replace('/[^0-9+]/', '', $phone);
-        
-        if (strlen($phone) < 7) {
+        if (!self::hasUserColumn('phone')) {
             return null;
         }
 
+        $phoneRaw = (string)$phone;
+        $phone = preg_replace('/[^0-9+]/', '', $phoneRaw);
+
+        if (!is_string($phone) || strlen($phone) < 7) {
+            return null;
+        }
+
+        // 1) Prefer exact match (fast path)
         $sql = "SELECT id, email, phone, display_name FROM users WHERE phone = :phone";
         if ($excludeUserId) {
             $sql .= " AND id != :exclude";
@@ -83,8 +523,37 @@ class AuthService
             $params['exclude'] = $excludeUserId;
         }
         $stmt->execute($params);
-        
-        return $stmt->fetch() ?: null;
+
+        $user = $stmt->fetch();
+        if ($user) {
+            return $user;
+        }
+
+        // 2) Fallback: tolerant match on last-10 digits
+        $needleKey = self::phoneMatchKey($phoneRaw);
+        if ($needleKey === '') {
+            return null;
+        }
+
+        $sql = "SELECT id, email, phone, display_name FROM users WHERE phone IS NOT NULL AND phone <> ''";
+        if ($excludeUserId) {
+            $sql .= " AND id != :exclude";
+        }
+        $stmt = $db->prepare($sql);
+        $params = [];
+        if ($excludeUserId) {
+            $params['exclude'] = $excludeUserId;
+        }
+        $stmt->execute($params);
+
+        foreach ($stmt->fetchAll() as $row) {
+            $rowKey = self::phoneMatchKey((string)($row['phone'] ?? ''));
+            if ($rowKey !== '' && $rowKey === $needleKey) {
+                return $row;
+            }
+        }
+
+        return null;
     }
 
     /**

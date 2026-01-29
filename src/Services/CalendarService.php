@@ -363,6 +363,8 @@ class CalendarService
         // User events
         if ($driver === 'pgsql') {
             $sql = "SELECT DISTINCT TO_CHAR(start_datetime::timestamp, 'YYYY-MM') as month FROM calendar_events WHERE user_id = :uid AND start_datetime >= :start AND start_datetime <= :end";
+        } elseif ($driver === 'mysql') {
+            $sql = "SELECT DISTINCT DATE_FORMAT(start_datetime, '%Y-%m') as month FROM calendar_events WHERE user_id = :uid AND start_datetime >= :start AND start_datetime <= :end";
         } else {
             $sql = "SELECT DISTINCT strftime('%Y-%m', start_datetime) as month FROM calendar_events WHERE user_id = :uid AND start_datetime >= :start AND start_datetime <= :end";
         }
@@ -375,6 +377,8 @@ class CalendarService
         // Vacations
         if ($driver === 'pgsql') {
             $sql = "SELECT DISTINCT TO_CHAR(start_date::date, 'YYYY-MM') as month FROM vacations WHERE user_id = :uid AND start_date >= :start AND start_date <= :end";
+        } elseif ($driver === 'mysql') {
+            $sql = "SELECT DISTINCT DATE_FORMAT(start_date, '%Y-%m') as month FROM vacations WHERE user_id = :uid AND start_date >= :start AND start_date <= :end";
         } else {
             $sql = "SELECT DISTINCT strftime('%Y-%m', start_date) as month FROM vacations WHERE user_id = :uid AND start_date >= :start AND start_date <= :end";
         }
@@ -387,6 +391,8 @@ class CalendarService
         // Bills
         if ($driver === 'pgsql') {
             $sql = "SELECT DISTINCT TO_CHAR(due_date::date, 'YYYY-MM') as month FROM finance_bills WHERE user_id = :uid AND due_date >= :start AND due_date <= :end";
+        } elseif ($driver === 'mysql') {
+            $sql = "SELECT DISTINCT DATE_FORMAT(due_date, '%Y-%m') as month FROM finance_bills WHERE user_id = :uid AND due_date >= :start AND due_date <= :end";
         } else {
             $sql = "SELECT DISTINCT strftime('%Y-%m', due_date) as month FROM finance_bills WHERE user_id = :uid AND due_date >= :start AND due_date <= :end";
         }
@@ -397,7 +403,14 @@ class CalendarService
         }
         
         // Birthdays (all months with family birthdays)
-        $sql = "SELECT DISTINCT " . ($driver === 'pgsql' ? "EXTRACT(MONTH FROM birthdate::date)::int" : "CAST(strftime('%m', birthdate) AS INTEGER)") . " as bmonth FROM family_members WHERE user_id = :uid AND birthdate IS NOT NULL AND birthdate != ''";
+        if ($driver === 'pgsql') {
+            $bmonthExpr = "EXTRACT(MONTH FROM birthdate::date)::int";
+        } elseif ($driver === 'mysql') {
+            $bmonthExpr = "MONTH(birthdate)";
+        } else {
+            $bmonthExpr = "CAST(strftime('%m', birthdate) AS INTEGER)";
+        }
+        $sql = "SELECT DISTINCT " . $bmonthExpr . " as bmonth FROM family_members WHERE user_id = :uid AND birthdate IS NOT NULL AND birthdate != ''";
         $stmt = $db->prepare($sql);
         $stmt->execute(['uid' => $userId]);
         $birthdayMonths = [];
@@ -460,6 +473,8 @@ class CalendarService
         
         if ($driver === 'pgsql') {
             $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND start_datetime::date >= :start AND start_datetime::date <= :end ORDER BY start_datetime ASC";
+        } elseif ($driver === 'mysql') {
+            $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND DATE(start_datetime) >= :start AND DATE(start_datetime) <= :end ORDER BY start_datetime ASC";
         } else {
             $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND date(start_datetime) >= :start AND date(start_datetime) <= :end ORDER BY start_datetime ASC";
         }
@@ -472,8 +487,8 @@ class CalendarService
     private static function getVacations(int $userId, string $startDate, string $endDate): array
     {
         $db = Database::getConnection();
-        $stmt = $db->prepare("SELECT * FROM vacations WHERE user_id = :uid AND ((start_date >= :start AND start_date <= :end) OR (end_date >= :start AND end_date <= :end))");
-        $stmt->execute(['uid' => $userId, 'start' => $startDate, 'end' => $endDate]);
+        $stmt = $db->prepare("SELECT * FROM vacations WHERE user_id = :uid AND ((start_date >= :start1 AND start_date <= :end1) OR (end_date >= :start2 AND end_date <= :end2))");
+        $stmt->execute(['uid' => $userId, 'start1' => $startDate, 'end1' => $endDate, 'start2' => $startDate, 'end2' => $endDate]);
         return $stmt->fetchAll() ?: [];
     }
 
@@ -484,6 +499,8 @@ class CalendarService
         
         if ($driver === 'pgsql') {
             $sql = "SELECT * FROM family_members WHERE user_id = :uid AND birthdate IS NOT NULL AND birthdate != '' AND EXTRACT(MONTH FROM birthdate::date) = :month";
+        } elseif ($driver === 'mysql') {
+            $sql = "SELECT * FROM family_members WHERE user_id = :uid AND birthdate IS NOT NULL AND birthdate != '' AND MONTH(birthdate) = :month";
         } else {
             $sql = "SELECT * FROM family_members WHERE user_id = :uid AND birthdate IS NOT NULL AND birthdate != '' AND CAST(strftime('%m', birthdate) AS INTEGER) = :month";
         }
@@ -516,10 +533,10 @@ class CalendarService
         
         // Get vehicles with expiry dates in range
         $stmt = $db->prepare("SELECT * FROM vehicles WHERE user_id = :uid AND (
-            (registration_expiry >= :start AND registration_expiry <= :end) OR
-            (insurance_end_date >= :start AND insurance_end_date <= :end)
+            (registration_expiry >= :start1 AND registration_expiry <= :end1) OR
+            (insurance_end_date >= :start2 AND insurance_end_date <= :end2)
         )");
-        $stmt->execute(['uid' => $userId, 'start' => $startDate, 'end' => $endDate]);
+        $stmt->execute(['uid' => $userId, 'start1' => $startDate, 'end1' => $endDate, 'start2' => $startDate, 'end2' => $endDate]);
         $vehicles = $stmt->fetchAll() ?: [];
         
         foreach ($vehicles as $v) {

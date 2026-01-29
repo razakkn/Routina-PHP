@@ -1,0 +1,183 @@
+
+== ftp://ftpupload.net/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+100   109    0   109    0     0     35      0 --:--:--  0:00:03 --:--:--    35
+.
+..
+htdocs
+.htaccess
+.override
+DO NOT UPLOAD FILES HERE
+config
+src
+views
+public
+storage
+scripts
+
+== ftp://ftpupload.net/htdocs/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+100   196    0   196    0     0     66      0 --:--:--  0:00:02 --:--:--    66
+.
+..
+index2.html
+files for your website should be uploaded here!
+config
+src
+views
+public
+storage
+scripts
+setup_database.php
+.htaccess
+test_db.php
+migrate_family_spouse_member_id.php
+
+== ftp://ftpupload.net/htdocs/public/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+100   104    0   104    0     0     64      0 --:--:--  0:00:01 --:--:--    64
+.
+..
+css
+js
+.keep
+index.php
+.htaccess
+setup_database.php
+setup_db_web.php
+migrate_vehicle.php
+
+== ftp://ftpupload.net/htdocs/public_html/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+curl: (9) Server denied you to change to the given directory
+
+== ftp://ftpupload.net/htdocs/public_html/public/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (9) Server denied you to change to the given directory
+
+== ftp://ftpupload.net/htdocs/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+100   196    0   196    0     0     58      0 --:--:--  0:00:03 --:--:--    58
+.
+..
+index2.html
+files for your website should be uploaded here!
+config
+src
+views
+public
+storage
+scripts
+setup_database.php
+.htaccess
+test_db.php
+migrate_family_spouse_member_id.php
+
+== ftp://ftpupload.net/htdocs/public/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+100   104    0   104    0     0     32      0 --:--:--  0:00:03 --:--:--    32
+.
+..
+css
+js
+.keep
+index.php
+.htaccess
+setup_database.php
+setup_db_web.php
+migrate_vehicle.php
+
+== ftp://ftpupload.net/htdocs/public/css/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+100   247    0   247    0     0     92      0 --:--:--  0:00:02 --:--:--    92
+.
+..
+.keep
+app-3d.css
+auth.css
+canvas.css
+dashboard.css
+family_tree.css
+home.css
+login-3d.css
+login-space.css
+logout-3d.css
+logout-space.css
+logout.css
+place_autocomplete.css
+profile.css
+sidebar_slices.css
+site.css
+vacation.css
+
+== ftp://ftpupload.net/htdocs/public/js/ ==
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+System.Management.Automation.RemoteException
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+100   181    0   181    0     0     50      0 --:--:--  0:00:03 --:--:--    50
+.
+..
+.keep
+admin-metrics.js
+app-3d.js
+family.js
+login-3d.js
+login-space.js
+logout-3d.js
+logout-space.js
+place_autocomplete.js
+profile.js
+site.js
+vehicle-make-model.js

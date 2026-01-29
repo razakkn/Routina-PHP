@@ -25,6 +25,8 @@ class Journal {
 
         if ($driver === 'pgsql') {
             $sql = "SELECT COUNT(*) FROM journal_entries WHERE user_id = :uid AND entry_date::date >= CAST(:since AS date)";
+        } elseif ($driver === 'mysql') {
+            $sql = "SELECT COUNT(*) FROM journal_entries WHERE user_id = :uid AND DATE(entry_date) >= DATE(:since)";
         } else {
             $sql = "SELECT COUNT(*) FROM journal_entries WHERE user_id = :uid AND date(entry_date) >= date(:since)";
         }

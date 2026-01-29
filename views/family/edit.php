@@ -25,6 +25,7 @@
         $memberId = (int)($m['id'] ?? 0);
         $curMotherId = (int)($m['mother_id'] ?? 0);
         $curFatherId = (int)($m['father_id'] ?? 0);
+        $curSpouseId = (int)($m['spouse_member_id'] ?? 0);
     ?>
 
     <div class="card" style="max-width: 860px;">
@@ -39,13 +40,22 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Relationship</label>
+                    <?php
+                        $relGroups = [
+                            'Immediate Family' => ['Spouse','Boyfriend','Girlfriend','Child','Mother','Father','Parent','Brother','Sister','Sibling'],
+                            'Extended Family' => ['Grandparent','Grandfather','Grandmother','Grandchild','Grandson','Granddaughter','Cousin','Uncle','Aunt','Nephew','Niece'],
+                            'In-Laws' => ['Father-in-law','Mother-in-law','Brother-in-law','Sister-in-law','Son-in-law','Daughter-in-law'],
+                            'Other' => ['Step-parent','Step-child','Step-sibling','Half-sibling','Godparent','Godchild','Guardian','Other']
+                        ];
+                        $curRel = (string)($m['relation'] ?? '');
+                    ?>
                     <select name="relation" class="form-select" required>
-                        <?php
-                            $rels = ['Spouse','Boyfriend','Girlfriend','Child','Mother','Father','Parent','Sibling','Grandparent','Grandchild','Cousin','Uncle','Aunt','Other'];
-                            $curRel = (string)($m['relation'] ?? '');
-                        ?>
-                        <?php foreach ($rels as $r): ?>
-                            <option value="<?php echo htmlspecialchars($r); ?>" <?php echo ($curRel === $r) ? 'selected' : ''; ?>><?php echo htmlspecialchars($r); ?></option>
+                        <?php foreach ($relGroups as $groupName => $rels): ?>
+                            <optgroup label="<?php echo htmlspecialchars($groupName); ?>">
+                                <?php foreach ($rels as $r): ?>
+                                    <option value="<?php echo htmlspecialchars($r); ?>" <?php echo ($curRel === $r) ? 'selected' : ''; ?>><?php echo htmlspecialchars($r); ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -84,11 +94,15 @@
                 </div>
             </div>
 
+            <!-- Family Connections Matrix -->
+            <div class="card-kicker mt-3 mb-2" style="font-size: 0.85rem;">Family Connections</div>
+            <div class="form-text mb-2">Link this person to other family members to build the family tree matrix.</div>
+            
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                    <label class="form-label">Mother (optional)</label>
+                    <label class="form-label">Mother</label>
                     <select name="mother_id" class="form-select">
-                        <option value="">—</option>
+                        <option value="">— Select mother —</option>
                         <?php foreach (($members ?? []) as $opt): ?>
                             <?php $optId = (int)($opt['id'] ?? 0); ?>
                             <?php if ($optId > 0 && $optId !== $memberId): ?>
@@ -98,9 +112,9 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Father (optional)</label>
+                    <label class="form-label">Father</label>
                     <select name="father_id" class="form-select">
-                        <option value="">—</option>
+                        <option value="">— Select father —</option>
                         <?php foreach (($members ?? []) as $opt): ?>
                             <?php $optId = (int)($opt['id'] ?? 0); ?>
                             <?php if ($optId > 0 && $optId !== $memberId): ?>
@@ -109,6 +123,20 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Spouse / Partner</label>
+                <select name="spouse_member_id" class="form-select">
+                    <option value="">— Select spouse/partner —</option>
+                    <?php foreach (($members ?? []) as $opt): ?>
+                        <?php $optId = (int)($opt['id'] ?? 0); ?>
+                        <?php if ($optId > 0 && $optId !== $memberId): ?>
+                            <option value="<?php echo $optId; ?>" <?php echo ($curSpouseId === $optId) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string)($opt['name'] ?? '')); ?><?php echo !empty($opt['relation']) ? ' — ' . htmlspecialchars((string)$opt['relation']) : ''; ?></option>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </select>
+                <div class="form-text">If this person is married, select their spouse from your family tree.</div>
             </div>
 
             <div class="row g-3 mb-3">

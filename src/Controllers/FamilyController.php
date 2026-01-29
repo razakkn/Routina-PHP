@@ -3,6 +3,7 @@
 namespace Routina\Controllers;
 
 use Routina\Models\Family;
+use Routina\Services\AuthService;
 
 class FamilyController {
     private function validateParentRefs($userId, $memberId, $motherId, $fatherId) {
@@ -45,6 +46,7 @@ class FamilyController {
         $email = isset($post['email']) ? trim((string)$post['email']) : '';
         $motherId = isset($post['mother_id']) ? (int)$post['mother_id'] : 0;
         $fatherId = isset($post['father_id']) ? (int)$post['father_id'] : 0;
+        $spouseMemberId = isset($post['spouse_member_id']) ? (int)$post['spouse_member_id'] : 0;
 
         $errors = [];
         if ($name === '') {
@@ -73,7 +75,8 @@ class FamilyController {
             'phone' => $phone,
             'no_email' => $noEmail,
             'mother_id' => $motherId,
-            'father_id' => $fatherId
+            'father_id' => $fatherId,
+            'spouse_member_id' => $spouseMemberId
         ];
 
         return [$payload, $errors];
@@ -110,13 +113,94 @@ class FamilyController {
                 'no_email' => $payload['no_email'],
                 'mother_id' => $payload['mother_id'],
                 'father_id' => $payload['father_id'],
+                'spouse_member_id' => $payload['spouse_member_id'],
                 'created_at' => gmdate('Y-m-d H:i:s')
             ]);
+            
+            // If an existing user has this email/phone, auto-populate their profile
+            AuthService::populateExistingUserFromFamilyData($payload);
+            
             header('Location: /family');
             exit;
         }
 
         $members = Family::getAll($_SESSION['user_id']);
+
+        // Also include any family records in other users' trees that reference this user's email
+        try {
+            $me = \Routina\Models\User::find((int)$_SESSION['user_id']);
+            $linked = [];
+            if ($me && !empty($me->email)) {
+                $linkedRaw = Family::findAllByEmail($me->email);
+                $ownerIds = [];
+                foreach ($linkedRaw as $lr) {
+                    $uid = (int)($lr['user_id'] ?? 0);
+                    if ($uid === (int)$_SESSION['user_id']) continue;
+                    $ownerIds[$uid] = true;
+                }
+
+                $ownerMap = [];
+                if (!empty($ownerIds)) {
+                    $ids = array_keys($ownerIds);
+                    $db = \Routina\Config\Database::getConnection();
+                    $in = implode(',', array_map('intval', $ids));
+                    $stmt = $db->prepare("SELECT id, display_name, email, dob, phone, gender, share_profile_publicly FROM users WHERE id IN ($in)");
+                    $stmt->execute();
+                    $rows = $stmt->fetchAll();
+                    foreach ($rows as $r) {
+                        $ownerMap[(int)$r['id']] = $r;
+                    }
+                }
+
+                // helper masks
+                $maskEmail = function ($e) {
+                    $e = trim((string)$e);
+                    if ($e === '' || strpos($e, '@') === false) return '';
+                    list($local, $domain) = explode('@', $e, 2);
+                    $first = substr($local, 0, 1);
+                    return $first . '***@' . $domain;
+                };
+                $maskPhone = function ($p) {
+                    $d = preg_replace('/\D+/', '', (string)$p);
+                    if ($d === '') return '';
+                    $len = strlen($d);
+                    if ($len <= 4) return str_repeat('*', $len);
+                    return str_repeat('*', max(0, $len - 4)) . substr($d, -4);
+                };
+
+                foreach ($linkedRaw as $lr) {
+                    $ownerId = (int)($lr['user_id'] ?? 0);
+                    if ($ownerId === (int)$_SESSION['user_id']) continue;
+                    $display = $lr;
+                    if (isset($ownerMap[$ownerId])) {
+                        $o = $ownerMap[$ownerId];
+                        $display['name'] = (string)($o['display_name'] ?? $display['name']);
+                        $share = !empty($o['share_profile_publicly']);
+                        if ($share) {
+                            $display['email'] = (string)($o['email'] ?? $display['email']);
+                            $display['birthdate'] = (string)($o['dob'] ?? $display['birthdate']);
+                            $display['phone'] = (string)($o['phone'] ?? $display['phone']);
+                            $display['gender'] = (string)($o['gender'] ?? $display['gender']);
+                        } else {
+                            $display['email'] = $maskEmail($o['email'] ?? ($display['email'] ?? ''));
+                            $display['phone'] = $maskPhone($o['phone'] ?? ($display['phone'] ?? ''));
+                            $display['birthdate'] = '';
+                        }
+                    }
+                    $display['linked_owner_user_id'] = $ownerId;
+                    $display['linked_owner_name'] = (string)($lr['owner_name'] ?? '');
+                    $display['is_foreign'] = 1;
+                    $linked[] = $display;
+                }
+            }
+            if (!empty($linked)) {
+                // Append linked entries to the members list for display only
+                $members = array_merge($members, $linked);
+            }
+        } catch (\Throwable $e) {
+            // ignore if anything goes wrong looking up linked records
+        }
+
         $matches = Family::getContactMatches((int)$_SESSION['user_id'], $members);
         view('family/index', ['members' => $members, 'matches' => $matches]);
     }
@@ -175,6 +259,10 @@ class FamilyController {
         }
 
         Family::updateByIdForUser($userId, $memberId, $payload);
+        
+        // If an existing user has this email/phone, auto-populate their profile
+        AuthService::populateExistingUserFromFamilyData($payload);
+        
         header('Location: /family');
         exit;
     }

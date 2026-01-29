@@ -7,20 +7,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Logged out - Routina</title>
-    <link rel="stylesheet" href="/css/logout-3d.css" />
+    <link rel="stylesheet" href="/css/login-matrix.css" />
 </head>
 <body>
-    <div id="ui-layer">
-        <div class="drift-message">
-            <h1>See You Soon</h1>
-            <p>Roam the cosmos until you return.</p>
-            <a href="/login" class="btn-reconnect">Establish Link</a>
-        </div>
-        <div class="status-log">
-            SESSION_TERMINATED<br>
-            UPLINK_OFFLINE<br>
-            DRIFT_MODE_ACTIVE
+
+    <div id="matrix-container">
+        <div id="matrix-bg"></div>
+        <div id="terminal-window">
+            <div class="matrix-text">
+                <p>SESSION TERMINATED</p>
+                <p>UPLINK_OFFLINE</p>
+                <p>DRIFT_MODE_ACTIVE</p>
+            </div>
+            <div class="matrix-text">
+                <p>See you soon.</p>
+                <p>Roam the cosmos until you return.</p>
+            </div>
+            <a href="/login" class="matrix-btn">Establish Link</a>
         </div>
     </div>
+
 </body>
 </html>

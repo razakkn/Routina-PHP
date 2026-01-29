@@ -44,6 +44,22 @@ class ProfileController {
         }
 
         $familyMembers = Family::getAll((int)$user->id);
+        $linkedFamily = [];
+        if (!empty($user->email)) {
+            $rawLinked = Family::findLinkedToEmail($user->email);
+            foreach ($rawLinked as $lf) {
+                $ownerUser = User::find((int)($lf['owner_user_id'] ?? 0));
+                if ($ownerUser) {
+                    $linkedFamily[] = [
+                        'owner_name' => $ownerUser->display_name,
+                        'owner_email' => $ownerUser->email,
+                        'owner_dob' => $ownerUser->dob,
+                        'relation' => $lf['relation'],
+                        'birthdate' => $ownerUser->dob,
+                    ];
+                }
+            }
+        }
 
         $currencyOptions = CurrencyService::all();
         $currentCurrencyCode = CurrencyService::normalizeCode($user->currency ?? 'USD');
@@ -72,6 +88,7 @@ class ProfileController {
             'ActiveSection' => $activeSection,
             'Mode' => $mode,
             'Input' => [
+                'Email' => $user->email,
                 'DisplayName' => $user->display_name,
                 'JobTitle' => $user->job_title,
                 'Headline' => $user->headline,
@@ -91,6 +108,7 @@ class ProfileController {
                 'SpouseCount' => $user->spouse_count,
 
                 'RelationshipStatus' => $user->relationship_status ?? 'single',
+                'FamilyRelation' => $user->family_relation,
                 'PartnerType' => (is_array($partner) ? ($partner['relation'] ?? '') : ''),
                 'PartnerName' => (is_array($partner) ? ($partner['name'] ?? '') : ''),
                 'PartnerDob' => (is_array($partner) ? ($partner['birthdate'] ?? '') : ''),
@@ -98,6 +116,7 @@ class ProfileController {
                 'PartnerEmail' => (is_array($partner) ? ($partner['email'] ?? '') : ''),
                 'PartnerPhone' => (is_array($partner) ? ($partner['phone'] ?? '') : ''),
                 'PartnerNoEmail' => (is_array($partner) ? (!empty($partner['no_email']) ? 1 : 0) : 0)
+                ,'ShareProfilePublicly' => !empty($user->share_profile_publicly) ? 1 : 0
             ],
             'Avatar' => (object)[
                 'HasImage' => !empty($user->avatar_image_url) || !empty($user->avatar_preset_key),
@@ -121,8 +140,9 @@ class ProfileController {
              'StatusMessage' => $_SESSION['flash_message'] ?? null,
              'UserId' => $user->id,
              'LoggedSpouseCount' => $user->spouse_count,
-             'ChildMembers' => [],
-             'FamilyMembers' => $familyMembers
+            'ChildMembers' => [],
+            'FamilyMembers' => $familyMembers,
+            'LinkedFamily' => $linkedFamily
         ];
         
         unset($_SESSION['flash_message']);
@@ -193,6 +213,7 @@ class ProfileController {
             $partnerEmail = isset($_POST['PartnerEmail']) ? trim((string)$_POST['PartnerEmail']) : '';
 
             $user->relationship_status = $relationshipStatus;
+            $user->share_profile_publicly = !empty($_POST['ShareProfilePublicly']) ? true : false;
 
             $profileErrors = [];
             if (in_array($relationshipStatus, ['in_relationship', 'married'], true)) {
@@ -261,6 +282,19 @@ class ProfileController {
             // Sync session for layout
             if (isset($_SESSION['user_data'])) {
                 $_SESSION['user_data']['name'] = $user->display_name;
+            }
+
+            // Propagate profile fields to any linked family member entries in other users' trees
+            try {
+                \Routina\Models\Family::updateLinkedRecordsForUser((int)$user->id, [
+                    'display_name' => $user->display_name,
+                    'dob' => $user->dob,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'gender' => $user->gender
+                ]);
+            } catch (\Throwable $e) {
+                // ignore propagation errors
             }
 
             $_SESSION['flash_message'] = "Profile updated successfully!";
@@ -436,5 +470,118 @@ class ProfileController {
         // Default: redirect to profile
         header('Location: /profile');
         exit;
+    }
+
+    /**
+     * Delete user account - shows confirmation page and handles deletion
+     */
+    public function deleteAccount() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $db = \Routina\Config\Database::getConnection();
+        
+        // Get user info for display (backward compatible with older DB schemas)
+        try {
+            $stmt = $db->prepare("SELECT routina_id, email, display_name FROM users WHERE id = :id");
+            $stmt->execute(['id' => $userId]);
+            $user = $stmt->fetch();
+        } catch (\PDOException $e) {
+            $msg = strtolower($e->getMessage());
+            if (strpos($msg, 'unknown column') !== false || strpos($msg, 'no such column') !== false || strpos($msg, 'does not exist') !== false) {
+                $stmt = $db->prepare("SELECT email, display_name FROM users WHERE id = :id");
+                $stmt->execute(['id' => $userId]);
+                $user = $stmt->fetch();
+                if (is_array($user)) {
+                    $user['routina_id'] = null;
+                }
+            } else {
+                throw $e;
+            }
+        }
+        
+        if (!$user) {
+            header('Location: /login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $confirmText = trim($_POST['confirm_text'] ?? '');
+            $password = $_POST['password'] ?? '';
+            
+            $expectedConfirm = 'DELETE MY ACCOUNT';
+            
+            // Validate confirmation text
+            if (strtoupper($confirmText) !== $expectedConfirm) {
+                view('account/delete_account', [
+                    'user' => $user,
+                    'error' => 'Please type "DELETE MY ACCOUNT" exactly to confirm.'
+                ]);
+                return;
+            }
+            
+            // Check if user has a password (not just Google OAuth)
+            try {
+                $stmt = $db->prepare("SELECT password, google_id FROM users WHERE id = :id");
+                $stmt->execute(['id' => $userId]);
+                $userData = $stmt->fetch();
+            } catch (\PDOException $e) {
+                $msg = strtolower($e->getMessage());
+                if (strpos($msg, 'unknown column') !== false || strpos($msg, 'no such column') !== false || strpos($msg, 'does not exist') !== false) {
+                    $stmt = $db->prepare("SELECT password FROM users WHERE id = :id");
+                    $stmt->execute(['id' => $userId]);
+                    $userData = $stmt->fetch();
+                    if (is_array($userData)) {
+                        $userData['google_id'] = null;
+                    }
+                } else {
+                    throw $e;
+                }
+            }
+            
+            // If user has a password, verify it
+            if (!empty($userData['password'])) {
+                if (!password_verify($password, $userData['password'])) {
+                    view('account/delete_account', [
+                        'user' => $user,
+                        'error' => 'Incorrect password. Please try again.'
+                    ]);
+                    return;
+                }
+            }
+            
+            // Perform the deletion
+            $deleteError = null;
+            $deleted = User::deleteAccount($userId, $deleteError);
+            
+            if ($deleted) {
+                // Clear session
+                $_SESSION = [];
+                if (ini_get('session.use_cookies')) {
+                    $params = session_get_cookie_params();
+                    setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+                }
+                session_destroy();
+                
+                // Redirect to goodbye page
+                header('Location: /account-deleted');
+                exit;
+            } else {
+                $ref = bin2hex(random_bytes(4));
+                $safeDetail = is_string($deleteError) && $deleteError !== '' ? $deleteError : 'unknown';
+                error_log("Account deletion failed for user {$userId} [ref={$ref}]: {$safeDetail}");
+
+                view('account/delete_account', [
+                    'user' => $user,
+                    'error' => 'Failed to delete account. Please try again. If this keeps happening, contact support with reference: ' . $ref
+                ]);
+                return;
+            }
+        }
+
+        view('account/delete_account', ['user' => $user]);
     }
 }

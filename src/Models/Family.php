@@ -5,6 +5,29 @@ namespace Routina\Models;
 use Routina\Config\Database;
 
 class Family {
+        /**
+         * Find all family member records where the given email matches (across all users).
+         * Used to show 'linked family' for a user whose email is referenced in someone else's tree.
+         */
+        public static function findLinkedToEmail($email) {
+            $db = Database::getConnection();
+            $email = strtolower(trim((string)$email));
+            if ($email === '') return [];
+            $stmt = $db->prepare("SELECT fm.*, u.display_name as owner_name, u.id as owner_user_id FROM family_members fm JOIN users u ON fm.user_id = u.id WHERE LOWER(fm.email) = :email ORDER BY fm.created_at DESC");
+            $stmt->execute(['email' => $email]);
+            return $stmt->fetchAll();
+        }
+    private static function isMissingColumnError(\Throwable $e, string $column): bool {
+        $msg = strtolower($e->getMessage());
+        $col = strtolower($column);
+        // MySQL: "Unknown column 'spouse_member_id'"
+        // SQLite: "no such column: spouse_member_id"
+        // PostgreSQL: "column ... does not exist"
+        return (strpos($msg, 'unknown column') !== false && strpos($msg, $col) !== false)
+            || (strpos($msg, 'no such column') !== false && strpos($msg, $col) !== false)
+            || (strpos($msg, 'does not exist') !== false && strpos($msg, $col) !== false);
+    }
+
     public static function getAll($userId) {
         $db = Database::getConnection();
         $stmt = $db->prepare("SELECT * FROM family_members WHERE user_id = :uid ORDER BY (birthdate IS NULL OR birthdate = ''), birthdate ASC, id ASC");
@@ -42,6 +65,7 @@ class Family {
         $noEmail = !empty($data['no_email']) ? 1 : 0;
         $motherId = isset($data['mother_id']) ? (int)$data['mother_id'] : 0;
         $fatherId = isset($data['father_id']) ? (int)$data['father_id'] : 0;
+        $spouseMemberId = isset($data['spouse_member_id']) ? (int)$data['spouse_member_id'] : 0;
         $createdAt = trim((string)($data['created_at'] ?? ''));
 
         if ($createdAt === '') {
@@ -49,12 +73,12 @@ class Family {
         }
 
         $stmt = $db->prepare("INSERT INTO family_members (
-            user_id, name, relation, birthdate, deathdate, gender, side_of_family, email, phone, no_email, mother_id, father_id, created_at
+            user_id, name, relation, birthdate, deathdate, gender, side_of_family, email, phone, no_email, mother_id, father_id, spouse_member_id, created_at
         ) VALUES (
-            :uid, :name, :rel, :bday, :dday, :gender, :side, :email, :phone, :no_email, :mother_id, :father_id, :created_at
+            :uid, :name, :rel, :bday, :dday, :gender, :side, :email, :phone, :no_email, :mother_id, :father_id, :spouse_mid, :created_at
         )");
 
-        $ok = $stmt->execute([
+        $params = [
             'uid' => $userId,
             'name' => $name,
             'rel' => $relation,
@@ -67,8 +91,26 @@ class Family {
             'no_email' => $noEmail,
             'mother_id' => ($motherId > 0 ? $motherId : null),
             'father_id' => ($fatherId > 0 ? $fatherId : null),
+            'spouse_mid' => ($spouseMemberId > 0 ? $spouseMemberId : null),
             'created_at' => $createdAt
-        ]);
+        ];
+
+        try {
+            $ok = $stmt->execute($params);
+        } catch (\PDOException $e) {
+            if (self::isMissingColumnError($e, 'spouse_member_id')) {
+                // Backward compatibility: DB not migrated yet
+                $stmt = $db->prepare("INSERT INTO family_members (
+                    user_id, name, relation, birthdate, deathdate, gender, side_of_family, email, phone, no_email, mother_id, father_id, created_at
+                ) VALUES (
+                    :uid, :name, :rel, :bday, :dday, :gender, :side, :email, :phone, :no_email, :mother_id, :father_id, :created_at
+                )");
+                unset($params['spouse_mid']);
+                $ok = $stmt->execute($params);
+            } else {
+                throw $e;
+            }
+        }
 
         if (!$ok) {
             return null;
@@ -95,6 +137,7 @@ class Family {
         $noEmail = !empty($data['no_email']) ? 1 : 0;
         $motherId = isset($data['mother_id']) ? (int)$data['mother_id'] : 0;
         $fatherId = isset($data['father_id']) ? (int)$data['father_id'] : 0;
+        $spouseMemberId = isset($data['spouse_member_id']) ? (int)$data['spouse_member_id'] : 0;
 
         $stmt = $db->prepare("UPDATE family_members SET
             name = :name,
@@ -107,10 +150,11 @@ class Family {
             phone = :phone,
             no_email = :no_email,
             mother_id = :mother_id,
-            father_id = :father_id
+            father_id = :father_id,
+            spouse_member_id = :spouse_mid
             WHERE id = :id AND user_id = :uid");
 
-        return $stmt->execute([
+        $params = [
             'name' => $name,
             'rel' => $relation,
             'bday' => ($birthdate === '' ? null : $birthdate),
@@ -122,9 +166,33 @@ class Family {
             'no_email' => $noEmail,
             'mother_id' => ($motherId > 0 ? $motherId : null),
             'father_id' => ($fatherId > 0 ? $fatherId : null),
+            'spouse_mid' => ($spouseMemberId > 0 ? $spouseMemberId : null),
             'id' => $memberId,
             'uid' => $userId
-        ]);
+        ];
+
+        try {
+            return $stmt->execute($params);
+        } catch (\PDOException $e) {
+            if (self::isMissingColumnError($e, 'spouse_member_id')) {
+                $stmt = $db->prepare("UPDATE family_members SET
+                    name = :name,
+                    relation = :rel,
+                    birthdate = :bday,
+                    deathdate = :dday,
+                    gender = :gender,
+                    side_of_family = :side,
+                    email = :email,
+                    phone = :phone,
+                    no_email = :no_email,
+                    mother_id = :mother_id,
+                    father_id = :father_id
+                    WHERE id = :id AND user_id = :uid");
+                unset($params['spouse_mid']);
+                return $stmt->execute($params);
+            }
+            throw $e;
+        }
     }
 
     public static function updateParentsByIdForUser($userId, $memberId, $motherId, $fatherId) {
@@ -155,6 +223,106 @@ class Family {
         $db = Database::getConnection();
         $stmt = $db->prepare("DELETE FROM family_members WHERE id = :id AND user_id = :uid");
         return $stmt->execute(['id' => $memberId, 'uid' => $userId]);
+    }
+
+    /**
+     * Find family member entries across ALL users by email.
+     * This is used when a new user signs up to pre-populate their profile
+     * with information already entered by their family members.
+     * 
+     * @param string $email Email to search for
+     * @return array Array of family member records with owner user info
+     */
+    public static function findAllByEmail($email) {
+        $db = Database::getConnection();
+        $originalEmail = $email;
+        $email = strtolower(trim((string)$email));
+        
+        error_log("Family::findAllByEmail called with email='" . substr(hash('sha256', $originalEmail), 0, 12) . "' normalized='" . substr(hash('sha256', $email), 0, 12) . "'");
+        
+        if ($email === '') {
+            error_log("Family::findAllByEmail returning empty - email is blank");
+            return [];
+        }
+        
+        // Try query with no_email check first, fall back if column doesn't exist
+        try {
+            $stmt = $db->prepare("
+                SELECT fm.*, u.display_name as owner_name, u.id as owner_user_id
+                FROM family_members fm
+                JOIN users u ON fm.user_id = u.id
+                WHERE LOWER(fm.email) = :email AND (fm.no_email = 0 OR fm.no_email IS NULL)
+                ORDER BY fm.created_at DESC
+            ");
+            $stmt->execute(['email' => $email]);
+            $results = $stmt->fetchAll();
+            error_log("Family::findAllByEmail query returned " . count($results) . " results for emailHash=" . substr(hash('sha256', $email), 0, 12));
+            
+            // Debug: also check how many total records have this email (ignoring no_email flag)
+            $stmt2 = $db->prepare("SELECT COUNT(*) as cnt FROM family_members WHERE LOWER(email) = :email");
+            $stmt2->execute(['email' => $email]);
+            $totalCount = (int)($stmt2->fetch()['cnt'] ?? 0);
+            if ($totalCount > 0 && count($results) === 0) {
+                error_log("Family::findAllByEmail NOTICE: $totalCount records exist with this email but blocked by no_email flag!");
+            }
+            
+            return $results;
+        } catch (\PDOException $e) {
+            $msg = strtolower($e->getMessage());
+            // If no_email column doesn't exist, retry without it
+            if (strpos($msg, 'no_email') !== false || strpos($msg, 'unknown column') !== false) {
+                $stmt = $db->prepare("
+                    SELECT fm.*, u.display_name as owner_name, u.id as owner_user_id
+                    FROM family_members fm
+                    JOIN users u ON fm.user_id = u.id
+                    WHERE LOWER(fm.email) = :email
+                    ORDER BY fm.created_at DESC
+                ");
+                $stmt->execute(['email' => $email]);
+                $results = $stmt->fetchAll();
+                error_log("Family::findAllByEmail (fallback) query returned " . count($results) . " results");
+                return $results;
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Find family member entries across ALL users by phone number.
+     * Phone matching is done by comparing last 10 digits to handle country codes.
+     * 
+     * @param string $phone Phone number to search for
+     * @return array Array of family member records with owner user info
+     */
+    public static function findAllByPhone($phone) {
+        $db = Database::getConnection();
+        $phoneKey = self::phoneMatchKey($phone);
+        
+        if ($phoneKey === '') {
+            return [];
+        }
+        
+        // Get all members with phones (no perfect way in SQL for last-10-digit match)
+        $stmt = $db->prepare("
+            SELECT fm.*, u.display_name as owner_name, u.id as owner_user_id
+            FROM family_members fm
+            JOIN users u ON fm.user_id = u.id
+            WHERE fm.phone IS NOT NULL AND fm.phone != ''
+            ORDER BY fm.created_at DESC
+        ");
+        $stmt->execute();
+        $allWithPhone = $stmt->fetchAll();
+        
+        // Filter by matching last 10 digits
+        $matches = [];
+        foreach ($allWithPhone as $row) {
+            $rowPhoneKey = self::phoneMatchKey($row['phone'] ?? '');
+            if ($rowPhoneKey !== '' && $rowPhoneKey === $phoneKey) {
+                $matches[] = $row;
+            }
+        }
+        
+        return $matches;
     }
 
     private static function normalizeEmail($email) {
@@ -251,6 +419,82 @@ class Family {
         }
 
         return $matches;
+    }
+
+    /**
+     * Update family member records in other users' trees that reference this user's email/phone.
+     * Only updates non-relationship fields (name, birthdate, email, phone, gender).
+     *
+     * @param int $userId The user who updated their profile
+     * @param array $fields Keys: display_name, dob, email, phone, gender
+     * @return int Number of records updated
+     */
+    public static function updateLinkedRecordsForUser(int $userId, array $fields): int {
+        $db = Database::getConnection();
+        $updated = 0;
+
+        $email = isset($fields['email']) ? strtolower(trim((string)$fields['email'])) : '';
+        $phone = isset($fields['phone']) ? trim((string)$fields['phone']) : '';
+
+        $targets = [];
+        if ($email !== '') {
+            $stmt = $db->prepare("SELECT * FROM family_members WHERE LOWER(email) = :email AND user_id <> :uid");
+            $stmt->execute(['email' => $email, 'uid' => $userId]);
+            $rows = $stmt->fetchAll();
+            foreach ($rows as $r) $targets[$r['user_id'] . ':' . $r['id']] = $r;
+        }
+
+        if ($phone !== '') {
+            $phoneKey = self::phoneMatchKey($phone);
+            if ($phoneKey !== '') {
+                // Use existing helper to fetch candidates by phone then compare keys
+                $candidates = self::findAllByPhone($phone);
+                foreach ($candidates as $r) {
+                    if ((int)($r['user_id'] ?? 0) === $userId) continue;
+                    $targets[$r['user_id'] . ':' . $r['id']] = $r;
+                }
+            }
+        }
+
+        foreach ($targets as $key => $row) {
+            $sets = [];
+            $params = ['id' => (int)$row['id'], 'uid' => (int)$row['user_id']];
+
+            if (isset($fields['display_name'])) {
+                $sets[] = 'name = :name';
+                $params['name'] = $fields['display_name'];
+            }
+            if (array_key_exists('dob', $fields)) {
+                $sets[] = 'birthdate = :bday';
+                $params['bday'] = ($fields['dob'] === '' ? null : $fields['dob']);
+            }
+            if (array_key_exists('email', $fields)) {
+                $sets[] = 'email = :email';
+                $params['email'] = ($fields['email'] === '' ? null : $fields['email']);
+            }
+            if (array_key_exists('phone', $fields)) {
+                $sets[] = 'phone = :phone';
+                $params['phone'] = ($fields['phone'] === '' ? null : $fields['phone']);
+            }
+            if (array_key_exists('gender', $fields)) {
+                $sets[] = 'gender = :gender';
+                $params['gender'] = ($fields['gender'] === '' ? null : $fields['gender']);
+            }
+
+            if (empty($sets)) continue;
+
+            $sql = 'UPDATE family_members SET ' . implode(', ', $sets) . ' WHERE id = :id AND user_id = :uid';
+            $stmt = $db->prepare($sql);
+            try {
+                if ($stmt->execute($params)) {
+                    $updated += $stmt->rowCount();
+                }
+            } catch (\PDOException $e) {
+                // Ignore update errors per-row to be resilient against schema drift
+            }
+        }
+
+        return $updated;
     }
 
     private static function escapeLike($s) {
