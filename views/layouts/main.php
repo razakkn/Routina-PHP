@@ -85,7 +85,7 @@ $buzzPreview = $layoutData->BuzzPreview;
                 </nav>
 
                 <div class="app-sidebar-foot">
-                    <div class="muted-sm">v0.5 • php-port</div>
+                    <div class="muted-sm"><?php echo htmlspecialchars(quote_of_the_day()); ?></div>
                 </div>
             </div>
         </aside>
@@ -208,7 +208,7 @@ $buzzPreview = $layoutData->BuzzPreview;
         </div>
 
         <footer class="app-footer">
-            <span class="muted-sm">Routina • your quiet timeline</span>
+            <span class="muted-sm"><?php echo htmlspecialchars(quote_of_the_day()); ?></span>
         </footer>
     </main>
 </div>

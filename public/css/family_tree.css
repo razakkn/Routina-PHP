@@ -71,6 +71,45 @@
   padding: 12px;
 }
 
+/* 13-14" screens: tighten layout before stacking */
+@media (max-width: 1440px){
+  .family-shell{
+    max-width: 1080px;
+  }
+
+  .family-layout{
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .family-tree__canvas{
+    min-width: 720px;
+  }
+
+  .family-node{
+    width: 230px;
+  }
+}
+
+/* Stack on smaller laptop widths to avoid horizontal scrolling */
+@media (max-width: 1300px){
+  .family-layout{
+    grid-template-columns: 1fr;
+  }
+
+  .family-slice{
+    position: static;
+  }
+
+  .family-tree__canvas{
+    min-width: 0;
+  }
+
+  .family-node{
+    width: 100%;
+    max-width: 360px;
+  }
+}
+
 [data-theme="dark"] .family-node{
   background: rgba(18,22,42,0.55);
 }

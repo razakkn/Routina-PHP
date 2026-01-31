@@ -39,6 +39,54 @@ body{
   background-attachment: fixed;
 }
 
+/* Reset module-specific backgrounds (temporary) */
+body[data-module]{
+  --canvas-bg:
+    linear-gradient(180deg, var(--canvas-0) 0%, var(--canvas-1) 45%, var(--canvas-2) 100%);
+  --canvas-pattern: none;
+  --canvas-illustration: none;
+}
+
+body[data-module]::before,
+body[data-module]::after{
+  display: none;
+}
+
+/* Pattern overlay per module for visible, themed backgrounds */
+body[data-module]{
+  --canvas-pattern: none;
+  --canvas-pattern-opacity: 0.38;
+  --canvas-illustration: none;
+  --canvas-illustration-size: 520px;
+  --canvas-illustration-x: 78%;
+  --canvas-illustration-y: 58%;
+}
+
+body[data-module]::before{
+  content: "";
+  position: fixed;
+  inset: -20% -10%;
+  pointer-events: none;
+  z-index: 1;
+  background: var(--canvas-pattern);
+  opacity: var(--canvas-pattern-opacity);
+  mix-blend-mode: multiply;
+}
+
+body[data-module]::after{
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: var(--canvas-illustration);
+  background-repeat: no-repeat;
+  background-size: var(--canvas-illustration-size);
+  background-position: var(--canvas-illustration-x) var(--canvas-illustration-y);
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+}
+
 /* ------------------------------------------------------------ */
 /* Module-specific canvas themes (set via body[data-module])     */
 
@@ -76,86 +124,260 @@ body[data-theme="light"][data-module="dashboard"]{
 /* Vacation / Travel: nature (sky + sea) */
 body[data-module="vacation"]{
   --canvas-bg:
-    radial-gradient(1000px 620px at 18% 8%, rgba(34,197,94,.16), transparent 62%),
-    radial-gradient(900px 560px at 84% 18%, rgba(6,182,212,.18), transparent 62%),
-    radial-gradient(800px 520px at 40% 112%, rgba(59,130,246,.10), transparent 60%),
-    linear-gradient(180deg, #f5fffb 0%, #f2fbff 55%, #eef2ff 100%);
+    repeating-linear-gradient(45deg, rgba(6,182,212,.08) 0 2px, transparent 2px 16px),
+    radial-gradient(380px 280px at 78% 18%, rgba(255,203,92,.35), transparent 70%),
+    radial-gradient(900px 560px at 12% 8%, rgba(34,197,94,.18), transparent 62%),
+    radial-gradient(900px 560px at 84% 28%, rgba(6,182,212,.22), transparent 62%),
+    radial-gradient(800px 520px at 40% 112%, rgba(59,130,246,.12), transparent 60%),
+    linear-gradient(180deg, #f7fffd 0%, #f2fbff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(135deg, rgba(6,182,212,.35) 0 1px, transparent 1px 14px),
+    repeating-linear-gradient(315deg, rgba(34,197,94,.28) 0 1px, transparent 1px 18px);
+  --canvas-pattern-opacity: 0.35;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M40 320 C140 240, 220 260, 320 190 S460 140, 500 80' fill='none' stroke='%2306b6d4' stroke-width='3' stroke-dasharray='6 10' opacity='0.35'/><path d='M360 170 l60 -30 -18 26 24 10 -28 8 -8 26 -12 -28 -28 -8 22 -10z' fill='none' stroke='%2322c55e' stroke-width='2' opacity='0.35'/></svg>");
+  --canvas-illustration-size: 520px;
 }
 
 body[data-theme="dark"][data-module="vacation"]{
   --canvas-bg:
-    radial-gradient(1000px 620px at 18% 8%, rgba(34,197,94,.22), transparent 62%),
-    radial-gradient(900px 560px at 84% 18%, rgba(6,182,212,.18), transparent 62%),
-    radial-gradient(800px 520px at 40% 112%, rgba(59,130,246,.16), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(6,182,212,.12) 0 2px, transparent 2px 18px),
+    radial-gradient(380px 280px at 78% 18%, rgba(255,203,92,.22), transparent 70%),
+    radial-gradient(1000px 620px at 18% 8%, rgba(34,197,94,.26), transparent 62%),
+    radial-gradient(900px 560px at 84% 18%, rgba(6,182,212,.22), transparent 62%),
+    radial-gradient(800px 520px at 40% 112%, rgba(59,130,246,.18), transparent 60%),
     linear-gradient(180deg, #041116 0%, #04131a 55%, #06152a 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(135deg, rgba(6,182,212,.35) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(315deg, rgba(34,197,94,.25) 0 1px, transparent 1px 20px);
+  --canvas-pattern-opacity: 0.32;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M40 320 C140 240, 220 260, 320 190 S460 140, 500 80' fill='none' stroke='%2306b6d4' stroke-width='3' stroke-dasharray='6 10' opacity='0.45'/><path d='M360 170 l60 -30 -18 26 24 10 -28 8 -8 26 -12 -28 -28 -8 22 -10z' fill='none' stroke='%2322c55e' stroke-width='2' opacity='0.45'/></svg>");
 }
 
 /* Home: calm warm light */
 body[data-module="home"]{
   --canvas-bg:
-    radial-gradient(1100px 680px at 18% 8%, rgba(255,200,87,.18), transparent 62%),
-    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.10), transparent 62%),
-    linear-gradient(180deg, #fff9f1 0%, #f8f7ff 55%, #eef2ff 100%);
+    radial-gradient(360px 260px at 18% 18%, rgba(255,214,125,.45), transparent 70%),
+    radial-gradient(900px 560px at 78% 22%, rgba(124,109,255,.16), transparent 62%),
+    radial-gradient(1100px 680px at 18% 8%, rgba(255,200,87,.20), transparent 62%),
+    linear-gradient(180deg, #fff7ef 0%, #f8f7ff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,170,87,.35) 0, transparent 60%),
+    radial-gradient(1px 1px at 80% 20%, rgba(124,109,255,.25) 0, transparent 60%),
+    radial-gradient(1px 1px at 60% 70%, rgba(66,216,255,.18) 0, transparent 60%);
+  --canvas-pattern-opacity: 0.35;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M140 250 L260 150 L380 250 V340 H140 Z' fill='none' stroke='%23f59e0b' stroke-width='3' opacity='0.35'/><path d='M210 340 V270 H310 V340' fill='none' stroke='%237c6dff' stroke-width='3' opacity='0.35'/></svg>");
 }
 
 body[data-theme="dark"][data-module="home"]{
   --canvas-bg:
-    radial-gradient(1100px 680px at 18% 8%, rgba(255,200,87,.18), transparent 62%),
-    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.14), transparent 62%),
+    radial-gradient(360px 260px at 18% 18%, rgba(255,214,125,.22), transparent 70%),
+    radial-gradient(1100px 680px at 18% 8%, rgba(255,200,87,.20), transparent 62%),
+    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.18), transparent 62%),
     linear-gradient(180deg, #0c0a06 0%, #0b0b17 55%, #070c22 100%);
+  --canvas-pattern:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,170,87,.28) 0, transparent 60%),
+    radial-gradient(1px 1px at 80% 20%, rgba(124,109,255,.22) 0, transparent 60%),
+    radial-gradient(1px 1px at 60% 70%, rgba(66,216,255,.18) 0, transparent 60%);
+  --canvas-pattern-opacity: 0.28;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M140 250 L260 150 L380 250 V340 H140 Z' fill='none' stroke='%23f59e0b' stroke-width='3' opacity='0.45'/><path d='M210 340 V270 H310 V340' fill='none' stroke='%237c6dff' stroke-width='3' opacity='0.45'/></svg>");
 }
 
 /* Vehicle: garage grid + warm highlights */
 body[data-module="vehicle"]{
   --canvas-bg:
-    linear-gradient(90deg, rgba(15,23,42,.04) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(15,23,42,.04) 1px, transparent 1px),
-    radial-gradient(900px 560px at 22% 8%, rgba(255,149,87,.20), transparent 62%),
-    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.10), transparent 62%),
+    repeating-linear-gradient(90deg, rgba(15,23,42,.05) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, rgba(15,23,42,.05) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(135deg, rgba(255,149,87,.10) 0 6px, transparent 6px 18px),
+    radial-gradient(900px 560px at 22% 8%, rgba(255,149,87,.26), transparent 62%),
+    radial-gradient(900px 560px at 84% 22%, rgba(59,130,246,.14), transparent 62%),
     linear-gradient(180deg, #fff7f2 0%, #f6f7ff 55%, #eef2ff 100%);
   background-size: 36px 36px, 36px 36px, auto, auto, auto;
+  --canvas-pattern:
+    repeating-linear-gradient(0deg, rgba(255,149,87,.35) 0 2px, transparent 2px 22px),
+    repeating-linear-gradient(90deg, rgba(59,130,246,.18) 0 2px, transparent 2px 28px);
+  --canvas-pattern-opacity: 0.32;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M150 250 H360 L400 290 H120 Z' fill='none' stroke='%23ff9557' stroke-width='3' opacity='0.35'/><circle cx='170' cy='290' r='20' fill='none' stroke='%232563eb' stroke-width='3' opacity='0.35'/><circle cx='320' cy='290' r='20' fill='none' stroke='%232563eb' stroke-width='3' opacity='0.35'/><path d='M210 250 L245 210 H320 L350 250' fill='none' stroke='%23ff9557' stroke-width='3' opacity='0.35'/></svg>");
+  --canvas-illustration-size: 520px;
 }
 
 body[data-theme="dark"][data-module="vehicle"]{
   --canvas-bg:
-    linear-gradient(90deg, rgba(226,232,255,.06) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(226,232,255,.06) 1px, transparent 1px),
-    radial-gradient(900px 560px at 22% 8%, rgba(255,149,87,.22), transparent 62%),
-    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.14), transparent 62%),
+    repeating-linear-gradient(90deg, rgba(226,232,255,.08) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, rgba(226,232,255,.08) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(135deg, rgba(255,149,87,.12) 0 6px, transparent 6px 18px),
+    radial-gradient(900px 560px at 22% 8%, rgba(255,149,87,.26), transparent 62%),
+    radial-gradient(900px 560px at 84% 22%, rgba(59,130,246,.18), transparent 62%),
     linear-gradient(180deg, #0a0610 0%, #070914 55%, #070c22 100%);
   background-size: 36px 36px, 36px 36px, auto, auto, auto;
+  --canvas-pattern:
+    repeating-linear-gradient(0deg, rgba(255,149,87,.35) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(90deg, rgba(59,130,246,.22) 0 2px, transparent 2px 30px);
+  --canvas-pattern-opacity: 0.28;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M150 250 H360 L400 290 H120 Z' fill='none' stroke='%23ff9557' stroke-width='3' opacity='0.45'/><circle cx='170' cy='290' r='20' fill='none' stroke='%2342d8ff' stroke-width='3' opacity='0.45'/><circle cx='320' cy='290' r='20' fill='none' stroke='%2342d8ff' stroke-width='3' opacity='0.45'/><path d='M210 250 L245 210 H320 L350 250' fill='none' stroke='%23ff9557' stroke-width='3' opacity='0.45'/></svg>");
 }
 
 /* Family: earth + tree canopy */
 body[data-module="family"]{
   --canvas-bg:
+    radial-gradient(320px 220px at 18% 20%, rgba(34,197,94,.30), transparent 70%),
+    radial-gradient(280px 200px at 80% 18%, rgba(34,197,94,.22), transparent 70%),
     radial-gradient(900px 560px at 20% 12%, rgba(34,197,94,.18), transparent 62%),
-    radial-gradient(900px 560px at 82% 18%, rgba(59,130,246,.10), transparent 62%),
-    radial-gradient(700px 480px at 50% 110%, rgba(120,83,46,.12), transparent 62%),
+    radial-gradient(900px 560px at 82% 18%, rgba(59,130,246,.12), transparent 62%),
+    radial-gradient(700px 480px at 50% 110%, rgba(120,83,46,.14), transparent 62%),
     linear-gradient(180deg, #f7fff7 0%, #f2fbff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(45deg, rgba(34,197,94,.20) 0 1px, transparent 1px 18px),
+    radial-gradient(1px 1px at 24% 24%, rgba(34,197,94,.30) 0, transparent 60%);
+  --canvas-pattern-opacity: 0.30;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M260 120 C210 120, 180 170, 180 210 C180 250, 210 280, 260 280 C310 280, 340 250, 340 210 C340 170, 310 120, 260 120 Z' fill='none' stroke='%2322c55e' stroke-width='3' opacity='0.35'/><path d='M260 280 V340' fill='none' stroke='%238b5a2b' stroke-width='4' opacity='0.35'/><path d='M230 330 H290' fill='none' stroke='%238b5a2b' stroke-width='4' opacity='0.35'/></svg>");
 }
 
 body[data-theme="dark"][data-module="family"]{
   --canvas-bg:
-    radial-gradient(900px 560px at 20% 12%, rgba(34,197,94,.20), transparent 62%),
-    radial-gradient(900px 560px at 82% 18%, rgba(59,130,246,.14), transparent 62%),
-    radial-gradient(700px 480px at 50% 110%, rgba(120,83,46,.12), transparent 62%),
+    radial-gradient(320px 220px at 18% 20%, rgba(34,197,94,.22), transparent 70%),
+    radial-gradient(280px 200px at 80% 18%, rgba(34,197,94,.16), transparent 70%),
+    radial-gradient(900px 560px at 20% 12%, rgba(34,197,94,.22), transparent 62%),
+    radial-gradient(900px 560px at 82% 18%, rgba(59,130,246,.16), transparent 62%),
+    radial-gradient(700px 480px at 50% 110%, rgba(120,83,46,.14), transparent 62%),
     linear-gradient(180deg, #04110a 0%, #04121a 55%, #06152a 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(45deg, rgba(34,197,94,.20) 0 1px, transparent 1px 20px),
+    radial-gradient(1px 1px at 24% 24%, rgba(34,197,94,.26) 0, transparent 60%);
+  --canvas-pattern-opacity: 0.26;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M260 120 C210 120, 180 170, 180 210 C180 250, 210 280, 260 280 C310 280, 340 250, 340 210 C340 170, 310 120, 260 120 Z' fill='none' stroke='%2322c55e' stroke-width='3' opacity='0.45'/><path d='M260 280 V340' fill='none' stroke='%238b5a2b' stroke-width='4' opacity='0.45'/><path d='M230 330 H290' fill='none' stroke='%238b5a2b' stroke-width='4' opacity='0.45'/></svg>");
 }
 
 /* Finance: clean emerald */
 body[data-module="finance"]{
   --canvas-bg:
-    radial-gradient(1100px 680px at 18% 8%, rgba(50,211,160,.18), transparent 62%),
-    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.10), transparent 62%),
+    repeating-linear-gradient(-45deg, rgba(16,185,129,.10) 0 2px, transparent 2px 14px),
+    linear-gradient(115deg, transparent 0 48%, rgba(16,185,129,.18) 48% 49%, transparent 49% 100%),
+    radial-gradient(1100px 680px at 18% 8%, rgba(50,211,160,.22), transparent 62%),
+    radial-gradient(900px 560px at 84% 22%, rgba(56,189,248,.12), transparent 62%),
     linear-gradient(180deg, #f2fffb 0%, #f4f8ff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(-35deg, rgba(16,185,129,.35) 0 1px, transparent 1px 14px),
+    linear-gradient(90deg, transparent 0 40%, rgba(16,185,129,.26) 40% 41%, transparent 41% 100%);
+  --canvas-pattern-opacity: 0.34;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M80 300 L160 240 L220 260 L300 200 L360 220 L440 150' fill='none' stroke='%2310b981' stroke-width='3' opacity='0.35'/><path d='M80 320 H440' fill='none' stroke='%230ea5e9' stroke-width='2' opacity='0.25'/></svg>");
 }
 
 body[data-theme="dark"][data-module="finance"]{
   --canvas-bg:
-    radial-gradient(1100px 680px at 18% 8%, rgba(50,211,160,.18), transparent 62%),
-    radial-gradient(900px 560px at 84% 22%, rgba(124,109,255,.14), transparent 62%),
+    repeating-linear-gradient(-45deg, rgba(16,185,129,.14) 0 2px, transparent 2px 14px),
+    linear-gradient(115deg, transparent 0 48%, rgba(16,185,129,.22) 48% 49%, transparent 49% 100%),
+    radial-gradient(1100px 680px at 18% 8%, rgba(50,211,160,.22), transparent 62%),
+    radial-gradient(900px 560px at 84% 22%, rgba(56,189,248,.18), transparent 62%),
     linear-gradient(180deg, #02110b 0%, #071122 55%, #070c22 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(-35deg, rgba(16,185,129,.35) 0 1px, transparent 1px 16px),
+    linear-gradient(90deg, transparent 0 40%, rgba(16,185,129,.30) 40% 41%, transparent 41% 100%);
+  --canvas-pattern-opacity: 0.30;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M80 300 L160 240 L220 260 L300 200 L360 220 L440 150' fill='none' stroke='%2310b981' stroke-width='3' opacity='0.45'/><path d='M80 320 H440' fill='none' stroke='%230ea5e9' stroke-width='2' opacity='0.35'/></svg>");
+}
+
+/* Journal: paper lines */
+body[data-module="journal"]{
+  --canvas-bg:
+    repeating-linear-gradient(180deg, rgba(15,23,42,.05) 0 1px, transparent 1px 22px),
+    radial-gradient(900px 560px at 18% 10%, rgba(147,197,253,.18), transparent 62%),
+    linear-gradient(180deg, #fffaf2 0%, #f7f4ff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(180deg, rgba(15,23,42,.12) 0 1px, transparent 1px 24px);
+  --canvas-pattern-opacity: 0.42;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M160 290 L300 150 L350 200 L210 340 Z' fill='none' stroke='%238a7dff' stroke-width='3' opacity='0.35'/><path d='M300 150 L360 130' fill='none' stroke='%238a7dff' stroke-width='3' opacity='0.35'/></svg>");
+}
+
+body[data-theme="dark"][data-module="journal"]{
+  --canvas-bg:
+    repeating-linear-gradient(180deg, rgba(226,232,255,.08) 0 1px, transparent 1px 24px),
+    radial-gradient(900px 560px at 18% 10%, rgba(147,197,253,.18), transparent 62%),
+    linear-gradient(180deg, #0b0a16 0%, #0b0f24 55%, #070c22 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(180deg, rgba(226,232,255,.14) 0 1px, transparent 1px 26px);
+  --canvas-pattern-opacity: 0.32;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M160 290 L300 150 L350 200 L210 340 Z' fill='none' stroke='%238a7dff' stroke-width='3' opacity='0.45'/><path d='M300 150 L360 130' fill='none' stroke='%238a7dff' stroke-width='3' opacity='0.45'/></svg>");
+}
+
+/* Calendar: subtle grid */
+body[data-module="calendar"]{
+  --canvas-bg:
+    repeating-linear-gradient(90deg, rgba(15,23,42,.05) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(0deg, rgba(15,23,42,.05) 0 1px, transparent 1px 26px),
+    radial-gradient(900px 560px at 80% 14%, rgba(96,165,250,.20), transparent 62%),
+    linear-gradient(180deg, #f5f9ff 0%, #f2f7ff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(90deg, rgba(56,189,248,.18) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(0deg, rgba(56,189,248,.18) 0 1px, transparent 1px 26px);
+  --canvas-pattern-opacity: 0.35;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><rect x='140' y='140' width='240' height='200' rx='18' fill='none' stroke='%2360a5fa' stroke-width='3' opacity='0.35'/><path d='M140 190 H380' fill='none' stroke='%2360a5fa' stroke-width='3' opacity='0.35'/><path d='M200 140 V115 M320 140 V115' fill='none' stroke='%2360a5fa' stroke-width='3' opacity='0.35'/></svg>");
+}
+
+body[data-theme="dark"][data-module="calendar"]{
+  --canvas-bg:
+    repeating-linear-gradient(90deg, rgba(226,232,255,.08) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(0deg, rgba(226,232,255,.08) 0 1px, transparent 1px 26px),
+    radial-gradient(900px 560px at 80% 14%, rgba(96,165,250,.22), transparent 62%),
+    linear-gradient(180deg, #070b1a 0%, #0b0f24 55%, #070c22 100%);
+  --canvas-pattern:
+    repeating-linear-gradient(90deg, rgba(56,189,248,.24) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(0deg, rgba(56,189,248,.24) 0 1px, transparent 1px 26px);
+  --canvas-pattern-opacity: 0.30;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><rect x='140' y='140' width='240' height='200' rx='18' fill='none' stroke='%2360a5fa' stroke-width='3' opacity='0.45'/><path d='M140 190 H380' fill='none' stroke='%2360a5fa' stroke-width='3' opacity='0.45'/><path d='M200 140 V115 M320 140 V115' fill='none' stroke='%2360a5fa' stroke-width='3' opacity='0.45'/></svg>");
+}
+
+/* Health: pulse */
+body[data-module="health"]{
+  --canvas-bg:
+    linear-gradient(90deg, transparent 0 45%, rgba(239,68,68,.18) 45% 46%, transparent 46% 100%),
+    radial-gradient(900px 560px at 18% 12%, rgba(239,68,68,.20), transparent 62%),
+    radial-gradient(900px 560px at 80% 22%, rgba(14,165,233,.12), transparent 62%),
+    linear-gradient(180deg, #fff5f6 0%, #f7f5ff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    linear-gradient(90deg, transparent 0 45%, rgba(239,68,68,.30) 45% 46%, transparent 46% 100%),
+    repeating-linear-gradient(90deg, rgba(239,68,68,.22) 0 2px, transparent 2px 24px);
+  --canvas-pattern-opacity: 0.30;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M120 240 H200 L230 200 L260 260 L300 210 L320 240 H400' fill='none' stroke='%23ef4444' stroke-width='3' opacity='0.35'/></svg>");
+}
+
+body[data-theme="dark"][data-module="health"]{
+  --canvas-bg:
+    linear-gradient(90deg, transparent 0 45%, rgba(239,68,68,.22) 45% 46%, transparent 46% 100%),
+    radial-gradient(900px 560px at 18% 12%, rgba(239,68,68,.22), transparent 62%),
+    radial-gradient(900px 560px at 80% 22%, rgba(14,165,233,.16), transparent 62%),
+    linear-gradient(180deg, #12060a 0%, #0d0b1a 55%, #070c22 100%);
+  --canvas-pattern:
+    linear-gradient(90deg, transparent 0 45%, rgba(239,68,68,.30) 45% 46%, transparent 46% 100%),
+    repeating-linear-gradient(90deg, rgba(239,68,68,.28) 0 2px, transparent 2px 26px);
+  --canvas-pattern-opacity: 0.26;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M120 240 H200 L230 200 L260 260 L300 210 L320 240 H400' fill='none' stroke='%23ef4444' stroke-width='3' opacity='0.45'/></svg>");
+}
+
+/* Buzz: sound waves */
+body[data-module="buzz"]{
+  --canvas-bg:
+    radial-gradient(240px 240px at 12% 18%, rgba(234,88,12,.25), transparent 70%),
+    radial-gradient(420px 420px at 12% 18%, rgba(234,88,12,.12), transparent 72%),
+    radial-gradient(900px 560px at 86% 20%, rgba(168,85,247,.16), transparent 62%),
+    linear-gradient(180deg, #fff7f3 0%, #f7f4ff 55%, #eef2ff 100%);
+  --canvas-pattern:
+    radial-gradient(220px 220px at 12% 18%, rgba(234,88,12,.35), transparent 70%),
+    radial-gradient(380px 380px at 12% 18%, rgba(234,88,12,.16), transparent 72%);
+  --canvas-pattern-opacity: 0.32;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M160 260 L240 230 L320 270 L320 190 L240 230 L160 200 Z' fill='none' stroke='%23ea580c' stroke-width='3' opacity='0.35'/><path d='M330 210 Q370 230 330 250' fill='none' stroke='%23a855f7' stroke-width='3' opacity='0.35'/><path d='M350 190 Q410 230 350 270' fill='none' stroke='%23a855f7' stroke-width='3' opacity='0.35'/></svg>");
+}
+
+body[data-theme="dark"][data-module="buzz"]{
+  --canvas-bg:
+    radial-gradient(240px 240px at 12% 18%, rgba(234,88,12,.24), transparent 70%),
+    radial-gradient(420px 420px at 12% 18%, rgba(234,88,12,.14), transparent 72%),
+    radial-gradient(900px 560px at 86% 20%, rgba(168,85,247,.18), transparent 62%),
+    linear-gradient(180deg, #12070a 0%, #0b0f24 55%, #070c22 100%);
+  --canvas-pattern:
+    radial-gradient(220px 220px at 12% 18%, rgba(234,88,12,.30), transparent 70%),
+    radial-gradient(380px 380px at 12% 18%, rgba(234,88,12,.18), transparent 72%);
+  --canvas-pattern-opacity: 0.26;
+  --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M160 260 L240 230 L320 270 L320 190 L240 230 L160 200 Z' fill='none' stroke='%23ea580c' stroke-width='3' opacity='0.45'/><path d='M330 210 Q370 230 330 250' fill='none' stroke='%23a855f7' stroke-width='3' opacity='0.45'/><path d='M350 190 Q410 230 350 270' fill='none' stroke='%23a855f7' stroke-width='3' opacity='0.45'/></svg>");
 }
 
 /* Subtle separators and depth so the app shell doesn't float on pure white */

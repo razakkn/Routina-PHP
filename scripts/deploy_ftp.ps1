@@ -1,7 +1,10 @@
 param(
     [string[]]$Files = @(
         'views/account/profile.php',
-        'src/Controllers/ProfileController.php'
+        'src/Controllers/ProfileController.php',
+        'views/account/register.php',
+        'views/account/login.php',
+        'src/Controllers/AuthController.php'
     )
 )
 

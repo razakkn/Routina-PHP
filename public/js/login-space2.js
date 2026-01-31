@@ -21,10 +21,22 @@
     }
 
     function initScene(){
+        if (document.getElementById('routina-space-canvas')) return;
         const overlay = document.getElementById('intro-text') || document.getElementById('space-bg');
         const matrixContainer = document.getElementById('matrix-container');
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        if (!hasWebGL()) {
+            console.warn('login-space2: WebGL not available; skipping background');
+            return;
+        }
+
+        let renderer;
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        } catch (e) {
+            console.warn('login-space2: failed to create WebGLRenderer', e);
+            return;
+        }
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.domElement.style.position = 'fixed';
@@ -61,6 +73,7 @@
         const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.9 });
         const stars = new THREE.Points(starsGeo, starsMat);
         scene.add(stars);
+        const starAttr = stars.geometry.attributes.position;
 
         // floating nebula sphere
         const nebGeo = new THREE.SphereGeometry(30, 32, 32);
@@ -86,18 +99,24 @@
 
         let start = null;
         let launched = false;
+        let rafId = 0;
+        let lastTime = 0;
+        let resizeRaf = 0;
+        const parallax = { x: 0, y: 0, tx: 0, ty: 0 };
 
         function animate(t){
-            requestAnimationFrame(animate);
+            rafId = requestAnimationFrame(animate);
             const time = (t||0) * 0.001;
+            const dt = lastTime ? Math.min((t - lastTime) / 16.67, 2) : 1;
+            lastTime = t;
             neb.material.uniforms.uTime.value = time;
             // stars slight move
-            const pos = stars.geometry.attributes.position.array;
+            const pos = starAttr.array;
             for (let i=0;i<starCount;i++){
-                pos[i*3+2] += 0.2;
+                pos[i*3+2] += 0.2 * dt;
                 if (pos[i*3+2] > 50) pos[i*3+2] = -800;
             }
-            stars.geometry.attributes.position.needsUpdate = true;
+            starAttr.needsUpdate = true;
 
             if (launched) {
                 const p = Math.min((time - start)/3.8, 1);
@@ -112,22 +131,66 @@
             cube.rotation.x += 0.002;
             cube.rotation.y += 0.003;
 
+            parallax.x += (parallax.tx - parallax.x) * 0.05;
+            parallax.y += (parallax.ty - parallax.y) * 0.05;
+            camera.position.x = parallax.x * 8;
+            camera.position.y = parallax.y * 4;
+            camera.lookAt(0,0,0);
+
             renderer.render(scene, camera);
         }
         animate();
 
         function begin(){
-            if (start) return;
             start = performance.now()*0.001;
             launched = true;
-            start = performance.now()*0.001;
         }
 
-        overlay?.addEventListener('click', function(){ begin(); });
-        window.addEventListener('resize', function(){
-            camera.aspect = window.innerWidth/window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        function onResize(){
+            if (resizeRaf) return;
+            resizeRaf = requestAnimationFrame(function(){
+                resizeRaf = 0;
+                camera.aspect = window.innerWidth/window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function onMouseMove(e){
+            const nx = (e.clientX / window.innerWidth) - 0.5;
+            const ny = (e.clientY / window.innerHeight) - 0.5;
+            parallax.tx = nx * 2;
+            parallax.ty = -ny * 2;
+        }
+
+        function onKeyDown(e){
+            if (e.key === ' ' || e.key === 'Enter') {
+                begin();
+            }
+        }
+
+        function cleanup(){
+            if (rafId) cancelAnimationFrame(rafId);
+            window.removeEventListener('resize', onResize);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('keydown', onKeyDown);
+            overlay?.removeEventListener('click', begin);
+            renderer?.domElement?.remove();
+        }
+
+        overlay?.addEventListener('click', begin);
+        window.addEventListener('resize', onResize);
+        window.addEventListener('mousemove', onMouseMove, { passive: true });
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('pagehide', cleanup, { once: true });
+    }
+
+    function hasWebGL(){
+        try {
+            const canvas = document.createElement('canvas');
+            return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        } catch (e) {
+            return false;
+        }
     }
 })();

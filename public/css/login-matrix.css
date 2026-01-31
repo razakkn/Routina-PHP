@@ -7,6 +7,10 @@ body {
     overflow: hidden;
 }
 
+body.galactic-login {
+    min-height: 100vh;
+}
+
 #space-bg {
     position: fixed;
     top: 0;
@@ -435,9 +439,19 @@ body {
     border-left: 1px solid rgba(255, 255, 255, 0.06); /* Left highlight for 3D feel */
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255,255,255,0.02); /* Drop shadow for depth */
     z-index: 20;
-    margin: 40px auto;
+    margin: 0;
     cursor: pointer;
     perspective: 1200px;
+}
+
+/* Centered stage for the floating card */
+.login-stage {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    width: min(92vw, 460px);
 }
 
 /* Floating wrapper animation (stops when .activated) */

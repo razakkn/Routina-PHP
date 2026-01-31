@@ -136,7 +136,6 @@ class User
                 country_of_origin = :country,
                 current_location = :location,
                 relationship_status = :rel_status,
-                partner_member_id = :partner_id
                 partner_member_id = :partner_id,
                 share_profile_publicly = :share_profile_publicly
                 WHERE id = :id");
@@ -162,8 +161,8 @@ class User
                 'location' => $this->current_location,
                 'rel_status' => $this->relationship_status,
                 'partner_id' => $this->partner_member_id,
+                'share_profile_publicly' => $this->share_profile_publicly ? 1 : 0,
                 'id' => $this->id
-                            'share_profile_publicly' => $this->share_profile_publicly ? 1 : 0,
             ]);
         }
         return false; 

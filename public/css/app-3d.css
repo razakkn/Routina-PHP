@@ -10,7 +10,11 @@
   height: 100vh;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.92;
+  opacity: 0.38;
+}
+
+body[data-theme="dark"] #app-3d{
+  opacity: 0.60;
 }
 
 /* Module switch overlay (tiny delay for a lively “warp” feeling) */

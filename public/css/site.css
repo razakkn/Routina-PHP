@@ -1724,6 +1724,58 @@ a.btn-soft:not(.btn){
    COMPREHENSIVE MOBILE FIXES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Laptops / smaller desktops (13-14") */
+@media (max-width: 1440px){
+  :root{
+    --sidebar-width: 252px;
+    --header-height: 64px;
+  }
+
+  .app-shell{
+    padding: clamp(12px, 2.4vw, 24px);
+    gap: clamp(12px, 2.4vw, 24px);
+  }
+
+  .sidebar-surface{
+    padding: 20px 18px 22px 18px;
+  }
+
+  .app-header{
+    padding: 0 clamp(12px, 2.2vw, 22px);
+  }
+
+  .app-content{
+    padding: clamp(12px, 2.2vw, 22px);
+  }
+
+  .module-tabs{
+    margin: 0 0 10px 0;
+  }
+}
+
+/* Shorter viewport heights (small laptop heights) */
+@media (max-height: 820px){
+  .app-shell{
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .app-header{
+    position: static;
+  }
+
+  .module-tabs{
+    position: static;
+  }
+
+  .sidebar-surface{
+    min-height: auto;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Small mobile devices */
 @media (max-width: 480px){
   :root{

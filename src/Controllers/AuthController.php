@@ -11,6 +11,7 @@ class AuthController {
         try {
             $routinaId = strtolower(trim($_POST['routina_id'] ?? ''));
             $password = $_POST['password'] ?? '';
+            error_log('Login attempt: rid=' . $routinaId . ' sid=' . session_id());
 
             // Validate input
             if (empty($routinaId)) {
@@ -90,6 +91,7 @@ class AuthController {
             }
 
             session_write_close();
+            error_log('Login success: rid=' . $routinaId . ' uid=' . $user['id'] . ' sid=' . session_id());
             header('Location: /dashboard');
             exit;
 
@@ -221,43 +223,91 @@ class AuthController {
 
     public function register() {
         $routinaId = strtolower(trim($_POST['routina_id'] ?? ''));
+        $email = strtolower(trim($_POST['email'] ?? ''));
         $password = $_POST['password'] ?? '';
 
-        if (!$routinaId || !$password) {
-            view('account/register', ['error' => 'Routina ID and Password are required']);
+        if (!$routinaId || !$password || !$email) {
+            view('account/register', [
+                'error' => 'Routina ID, Email, and Password are required',
+                'routina_id' => $routinaId,
+                'email' => $email
+            ]);
             return;
         }
 
         // Validate Routina ID format (3-20 chars, start with letter, alphanumeric + underscore)
         if (!preg_match('/^[a-z][a-z0-9_]{2,19}$/', $routinaId)) {
-            view('account/register', ['error' => 'Routina ID must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores.']);
+            $suggestions = AuthService::suggestRoutinaIds($routinaId, $email);
+            view('account/register', [
+                'error' => 'Routina ID must be 3-20 characters, start with a letter, and contain only letters, numbers, and underscores.',
+                'routina_id' => $routinaId,
+                'email' => $email,
+                'suggestions' => $suggestions
+            ]);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            view('account/register', [
+                'error' => 'Please enter a valid email address.',
+                'routina_id' => $routinaId,
+                'email' => $email
+            ]);
             return;
         }
 
         // Check if Routina ID is available
         if (!AuthService::isRoutinaIdAvailable($routinaId)) {
-            view('account/register', ['error' => 'This Routina ID is already taken. Please choose another.']);
+            $suggestions = AuthService::suggestRoutinaIds($routinaId, $email);
+            view('account/register', [
+                'error' => 'This Routina ID is already taken. Please choose another.',
+                'routina_id' => $routinaId,
+                'email' => $email,
+                'suggestions' => $suggestions
+            ]);
+            return;
+        }
+
+        // Check if email is already in use
+        if (AuthService::findByEmail($email)) {
+            view('account/register', [
+                'error' => 'This email is already associated with an account.',
+                'routina_id' => $routinaId,
+                'email' => $email
+            ]);
             return;
         }
 
         // Validate password strength
         $validation = AuthService::validatePassword($password);
         if (!$validation['valid']) {
-            view('account/register', ['error' => $validation['errors'][0]]);
+            view('account/register', [
+                'error' => $validation['errors'][0],
+                'routina_id' => $routinaId,
+                'email' => $email
+            ]);
             return;
         }
 
         $db = Database::getConnection();
         
-        // Insert new user with routina_id only (no email yet)
-        $sql = "INSERT INTO users (routina_id, password, currency, spouse_count, created_at) 
-                VALUES (:rid, :pass, 'USD', 0, CURRENT_TIMESTAMP)";
+        // Insert new user with routina_id and email
+        $sql = "INSERT INTO users (routina_id, email, password, currency, spouse_count, created_at) 
+                VALUES (:rid, :email, :pass, 'USD', 0, CURRENT_TIMESTAMP)";
         $stmt = $db->prepare($sql);
         $hash = password_hash((string)$password, PASSWORD_DEFAULT);
-        $success = $stmt->execute([
-            'rid' => $routinaId,
-            'pass' => $hash
-        ]);
+        $dbError = null;
+        try {
+            $success = $stmt->execute([
+                'rid' => $routinaId,
+                'email' => $email,
+                'pass' => $hash
+            ]);
+        } catch (\PDOException $e) {
+            $success = false;
+            $dbError = $e->getMessage();
+            error_log('Register failed: ' . $dbError);
+        }
 
         if ($success) {
             $id = $db->lastInsertId();
@@ -265,14 +315,27 @@ class AuthController {
             $_SESSION['user_id'] = (int)$id;
             $_SESSION['user_data'] = [
                 'name' => $routinaId,
-                'email' => '',
+                'email' => $email,
                 'routina_id' => $routinaId
             ];
             
             // Redirect to dashboard with success message
             view('account/register', ['success' => 'Account created successfully! You can now log in.']);
         } else {
-            view('account/register', ['error' => 'Registration failed. Please try again.']);
+            $message = 'Registration failed. Please try again.';
+            if (is_string($dbError)) {
+                $lower = strtolower($dbError);
+                if (strpos($lower, "doesn't exist") !== false || strpos($lower, 'does not exist') !== false) {
+                    $message = 'Registration system is not initialized. Please contact support.';
+                } elseif (strpos($lower, 'unknown column') !== false) {
+                    $message = 'Registration schema is outdated. Please contact support.';
+                }
+            }
+            view('account/register', [
+                'error' => $message,
+                'routina_id' => $routinaId,
+                'email' => $email
+            ]);
         }
     }
 

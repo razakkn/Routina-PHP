@@ -59,12 +59,80 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Enforce HTTPS when app_url is HTTPS to keep secure cookies consistent
+$cfgFile = __DIR__ . '/../config/config.php';
+if (is_file($cfgFile)) {
+    $cfg = require $cfgFile;
+    $appUrl = is_array($cfg) ? (string)($cfg['app_url'] ?? '') : '';
+    if (stripos($appUrl, 'https://') === 0) {
+        $isHttps = (
+            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+            (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+            (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') ||
+            (!empty($_SERVER['REQUEST_SCHEME']) && strtolower($_SERVER['REQUEST_SCHEME']) === 'https') ||
+            (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+        );
+        if (!$isHttps) {
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+            $uri = $_SERVER['REQUEST_URI'] ?? '/';
+            if ($host !== '') {
+                header('Location: https://' . $host . $uri, true, 301);
+                exit;
+            }
+        }
+    }
+}
+
 // Session hardening (must run before session_start)
 ini_set('session.use_strict_mode', '1');
-$secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+$sessionPath = __DIR__ . '/../storage/sessions';
+if (!is_dir($sessionPath)) {
+    @mkdir($sessionPath, 0777, true);
+}
+if (is_dir($sessionPath) && is_writable($sessionPath)) {
+    ini_set('session.save_path', $sessionPath);
+} else {
+    $tmp = sys_get_temp_dir();
+    if (is_string($tmp) && $tmp !== '') {
+        ini_set('session.save_path', $tmp);
+        error_log('Session path fallback to temp: ' . $tmp);
+    } else {
+        error_log('Session path not writable: ' . $sessionPath);
+    }
+}
+$secureCookie = (
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+    (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+    (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') ||
+    (!empty($_SERVER['REQUEST_SCHEME']) && strtolower($_SERVER['REQUEST_SCHEME']) === 'https') ||
+    (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+);
+if (!$secureCookie) {
+    $appUrl = isset($appUrl) ? $appUrl : '';
+    if (stripos($appUrl, 'https://') === 0) {
+        $secureCookie = true;
+    }
+}
+$cookieDomain = '';
+if (!empty($appUrl)) {
+    $host = parse_url($appUrl, PHP_URL_HOST);
+    if (is_string($host) && $host !== '') {
+        $cookieDomain = $host;
+    }
+}
+if ($cookieDomain === '') {
+    $cookieDomain = $_SERVER['HTTP_HOST'] ?? '';
+}
+if ($cookieDomain !== '') {
+    $cookieDomain = preg_replace('/:\d+$/', '', $cookieDomain);
+    if ($cookieDomain === 'localhost' || filter_var($cookieDomain, FILTER_VALIDATE_IP)) {
+        $cookieDomain = '';
+    }
+}
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
+    'domain' => $cookieDomain ?: null,
     'secure' => $secureCookie,
     'httponly' => true,
     'samesite' => $secureCookie ? 'None' : 'Lax'
@@ -121,6 +189,21 @@ function app_config($key = null, $default = null) {
     return $config[$key] ?? $default;
 }
 
+function quote_of_the_day(): string {
+    $quotes = [
+        'Small steps, steady progress.',
+        'Make today simple, make it count.',
+        'Your pace is still progress.',
+        'Clarity first. Then momentum.',
+        'One routine at a time.',
+        'Be gentle, be consistent.',
+        'Do the next right thing.',
+        'Tiny wins build big change.'
+    ];
+    $idx = (int)floor(time() / 86400) % count($quotes);
+    return $quotes[$idx];
+}
+
 function redirect($path) {
     header('Location: ' . $path);
     exit;
@@ -128,6 +211,7 @@ function redirect($path) {
 
 function require_login() {
     if (!isset($_SESSION['user_id'])) {
+        error_log('Auth required: missing session user_id, sid=' . session_id() . ' path=' . ($_SERVER['REQUEST_URI'] ?? ''));
         redirect('/login');
     }
 }
@@ -218,6 +302,12 @@ function csrf_field() {
 
 function csrf_verify() {
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        return;
+    }
+
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if (in_array($path, ['/login', '/register'], true)) {
+        // Allow auth endpoints without CSRF to avoid blocking first-time users when session cookies are not yet stable.
         return;
     }
 
