@@ -82,9 +82,8 @@ if (is_file($cfgFile)) {
                     $host .= ':' . $appPort;
                 }
             }
-            $uri = $_SERVER['REQUEST_URI'] ?? '/';
             if ($host !== '') {
-                header('Location: https://' . $host . $uri, true, 301);
+                header('Location: https://' . $host . '/', true, 301);
                 exit;
             }
         }
