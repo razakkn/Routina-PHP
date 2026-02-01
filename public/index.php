@@ -347,7 +347,7 @@ function csrf_verify() {
     }
 
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-    if (in_array($path, ['/login', '/register'], true)) {
+    if (in_array($path, ['/login', '/register', '/forgot-password'], true)) {
         // Allow auth endpoints without CSRF to avoid blocking first-time users when session cookies are not yet stable.
         return;
     }
