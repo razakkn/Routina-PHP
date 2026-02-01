@@ -8,6 +8,35 @@ use Routina\Services\CurrencyService;
 use Routina\Services\HolidayService;
 
 class ProfileController {
+    private function resolveAvatarPath($avatarUrl): ?string
+    {
+        if (!is_string($avatarUrl) || $avatarUrl === '') {
+            return null;
+        }
+        if (!str_starts_with($avatarUrl, '/uploads/avatars/')) {
+            return null;
+        }
+        if (strpos($avatarUrl, '..') !== false || strpos($avatarUrl, '\\') !== false) {
+            return null;
+        }
+        $file = substr($avatarUrl, strlen('/uploads/avatars/'));
+        if ($file === '' || basename($file) !== $file) {
+            return null;
+        }
+        if (!preg_match('/^[A-Za-z0-9._-]+$/', $file)) {
+            return null;
+        }
+        $baseDir = realpath(__DIR__ . '/../../public/uploads/avatars');
+        if ($baseDir === false) {
+            return null;
+        }
+        $path = $baseDir . DIRECTORY_SEPARATOR . $file;
+        if (strpos($path, $baseDir . DIRECTORY_SEPARATOR) !== 0) {
+            return null;
+        }
+        return $path;
+    }
+
     public function index() {
         if (!isset($_SESSION['user_id'])) {
             header('Location: /login');
@@ -315,11 +344,9 @@ class ProfileController {
             if (!empty($_POST['AvatarPresetKey'])) {
                  $user->avatar_preset_key = $_POST['AvatarPresetKey'];
                  // Clear custom if preset selected (and remove previous custom file if any)
-                 if (is_string($user->avatar_image_url) && str_starts_with($user->avatar_image_url, '/uploads/avatars/')) {
-                     $oldPath = __DIR__ . '/../../public' . $user->avatar_image_url;
-                     if (is_file($oldPath)) {
-                         @unlink($oldPath);
-                     }
+                 $oldPath = $this->resolveAvatarPath($user->avatar_image_url);
+                 if ($oldPath && is_file($oldPath)) {
+                     @unlink($oldPath);
                  }
                  $user->avatar_image_url = null;
             }
@@ -372,11 +399,9 @@ class ProfileController {
                     
                     if (move_uploaded_file($_FILES['AvatarFile']['tmp_name'], $destPath)) {
                         // Remove previous custom avatar file if any
-                        if (is_string($user->avatar_image_url) && str_starts_with($user->avatar_image_url, '/uploads/avatars/')) {
-                            $oldPath = __DIR__ . '/../../public' . $user->avatar_image_url;
-                            if (is_file($oldPath)) {
-                                @unlink($oldPath);
-                            }
+                        $oldPath = $this->resolveAvatarPath($user->avatar_image_url);
+                        if ($oldPath && is_file($oldPath)) {
+                            @unlink($oldPath);
                         }
                         $user->avatar_image_url = '/uploads/avatars/' . $fileName;
                         $user->avatar_preset_key = null; 
@@ -386,11 +411,9 @@ class ProfileController {
             
             // 3. Delete/Remove
             if (!empty($_POST['DeleteAvatar'])) {
-                if (is_string($user->avatar_image_url) && str_starts_with($user->avatar_image_url, '/uploads/avatars/')) {
-                    $oldPath = __DIR__ . '/../../public' . $user->avatar_image_url;
-                    if (is_file($oldPath)) {
-                        @unlink($oldPath);
-                    }
+                $oldPath = $this->resolveAvatarPath($user->avatar_image_url);
+                if ($oldPath && is_file($oldPath)) {
+                    @unlink($oldPath);
                 }
                 $user->avatar_image_url = null;
                 $user->avatar_preset_key = null;

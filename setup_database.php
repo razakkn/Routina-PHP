@@ -418,6 +418,7 @@ try {
             planned_date TEXT,
             is_completed INTEGER DEFAULT 0
         )");
+        $db->exec("ALTER TABLE home_tasks ADD COLUMN IF NOT EXISTS planned_date TEXT");
 
         // Vacation
         echo "Creating vacation table...\n";
@@ -1375,6 +1376,12 @@ try {
             planned_date TEXT,
             is_completed INTEGER DEFAULT 0
         )");
+    $columnsStmt = $db->query("PRAGMA table_info(home_tasks)");
+    $columns = $columnsStmt ? $columnsStmt->fetchAll() : [];
+    $columnNames = array_map(function ($col) { return $col['name']; }, $columns);
+    if (!in_array('planned_date', $columnNames, true)) {
+        $db->exec("ALTER TABLE home_tasks ADD COLUMN planned_date TEXT");
+    }
 
     echo "Creating vacation table...\n";
     $db->exec("CREATE TABLE IF NOT EXISTS vacations (

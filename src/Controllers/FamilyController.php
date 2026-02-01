@@ -304,8 +304,8 @@ class FamilyController {
 
         Family::updateParentsByIdForUser($userId, $memberId, $motherId, $fatherId);
 
-        $returnTo = $_POST['return_to'] ?? '';
-        if (is_string($returnTo) && $returnTo !== '' && substr($returnTo, 0, 1) === '/') {
+        $returnTo = $this->sanitizeReturnTo($_POST['return_to'] ?? '');
+        if ($returnTo !== null) {
             header('Location: ' . $returnTo);
             exit;
         }
@@ -348,5 +348,26 @@ class FamilyController {
         Family::deleteByIdForUser($userId, $memberId);
         header('Location: /family');
         exit;
+    }
+
+    private function sanitizeReturnTo($path): ?string
+    {
+        if (!is_string($path)) {
+            return null;
+        }
+        $path = trim($path);
+        if ($path === '') {
+            return null;
+        }
+        if ($path[0] !== '/' || strpos($path, '//') === 0) {
+            return null;
+        }
+        if (strpos($path, '\\') !== false || strpos($path, '://') !== false) {
+            return null;
+        }
+        if (preg_match('/[\r\n]/', $path)) {
+            return null;
+        }
+        return $path;
     }
 }

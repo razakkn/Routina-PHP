@@ -25,7 +25,8 @@
                 $user = \Routina\Models\User::find((int)$_SESSION['user_id']);
                 $appName = 'Routina';
                 $email = urlencode($user->email ?? 'user');
-                $otpAuthUrl = "otpauth://totp/{$appName}:{$email}?secret={$secret}&issuer={$appName}";
+                $algo = strtoupper(\Routina\Services\AuthService::getTotpAlgorithm());
+                $otpAuthUrl = "otpauth://totp/{$appName}:{$email}?secret={$secret}&issuer={$appName}&algorithm={$algo}";
             ?>
             
             <div class="text-center mb-4">

@@ -707,16 +707,15 @@ class CalendarService
     private static function getRecurringEvents(int $userId): array
     {
         $db = Database::getConnection();
-        $driver = $db->getAttribute(\PDO::ATTR_DRIVER_NAME);
         $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND is_recurring = 1";
-        if ($driver === 'mysql') {
-            $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND is_recurring = 1";
-        } elseif ($driver === 'pgsql') {
-            $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND is_recurring = true";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute(['uid' => $userId]);
+            return $stmt->fetchAll() ?: [];
+        } catch (\PDOException $e) {
+            // Legacy schemas may not have is_recurring yet.
+            return [];
         }
-        $stmt = $db->prepare($sql);
-        $stmt->execute(['uid' => $userId]);
-        return $stmt->fetchAll() ?: [];
     }
 
     private static function getUserHolidayCountry(int $userId): string

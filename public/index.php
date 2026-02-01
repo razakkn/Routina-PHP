@@ -73,7 +73,27 @@ if (is_file($cfgFile)) {
             (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
         );
         if (!$isHttps) {
-            $host = $_SERVER['HTTP_HOST'] ?? '';
+            $sanitizeHost = function ($host): string {
+                $host = trim((string)$host);
+                if ($host === '') return '';
+                if (preg_match('/[\r\n]/', $host)) return '';
+                if (!preg_match('/^(?:[A-Za-z0-9-]+\.)*[A-Za-z0-9-]+(?::\d+)?$/', $host)) {
+                    return '';
+                }
+                return $host;
+            };
+
+            $appHost = '';
+            $appPort = null;
+            if ($appUrl !== '') {
+                $appHost = (string)(parse_url($appUrl, PHP_URL_HOST) ?? '');
+                $appPort = parse_url($appUrl, PHP_URL_PORT);
+            }
+
+            $host = $appHost !== '' ? $appHost : ($sanitizeHost($_SERVER['HTTP_HOST'] ?? '') ?: $sanitizeHost($_SERVER['SERVER_NAME'] ?? ''));
+            if ($host !== '' && $appPort) {
+                $host .= ':' . $appPort;
+            }
             $uri = $_SERVER['REQUEST_URI'] ?? '/';
             if ($host !== '') {
                 header('Location: https://' . $host . $uri, true, 301);
@@ -650,7 +670,7 @@ if ($requestUri === '/api/vehicle/models') {
     }
 
     $ttl = 30 * 24 * 60 * 60;
-    $key = 'vpic_models_' . $year . '_' . sha1(strtolower($make));
+    $key = 'vpic_models_' . $year . '_' . hash('sha256', strtolower($make));
     $cached = cache_get_json($key, $ttl);
     if (is_array($cached)) {
         json_response($cached);

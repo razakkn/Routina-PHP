@@ -10,6 +10,7 @@ use Routina\Models\Family;
  */
 class AuthService
 {
+    private const TOTP_ALGO = 'sha256';
     /**
      * Cache of users table columns for the active DB connection.
      * @var array<string, bool>|null
@@ -940,12 +941,16 @@ class AuthService
     {
         // Simple TOTP implementation (time-step 30 seconds, 6 digits)
         $timeStep = floor(time() / 30);
+        $algos = [self::getTotpAlgorithm(), 'sha1'];
+        $algos = array_values(array_unique($algos));
         
         // Check current and adjacent time steps for clock drift
         for ($i = -1; $i <= 1; $i++) {
-            $expected = self::generateTotpCode($secret, $timeStep + $i);
-            if (hash_equals($expected, $code)) {
-                return true;
+            foreach ($algos as $algo) {
+                $expected = self::generateTotpCode($secret, $timeStep + $i, $algo);
+                if (hash_equals($expected, $code)) {
+                    return true;
+                }
             }
         }
         
@@ -959,7 +964,7 @@ class AuthService
      * @param int $timeStep Time step
      * @return string 6-digit code
      */
-    private static function generateTotpCode(string $secret, int $timeStep): string
+    private static function generateTotpCode(string $secret, int $timeStep, string $algo): string
     {
         // Decode base32
         $base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -974,12 +979,17 @@ class AuthService
             }
         }
 
-        // HMAC-SHA1
+        $algo = strtolower(trim($algo));
+        if (!in_array($algo, ['sha1', 'sha256', 'sha512'], true)) {
+            $algo = self::getTotpAlgorithm();
+        }
+
         $time = pack('N*', 0, $timeStep);
-        $hash = hash_hmac('sha1', $time, $key, true);
+        $hash = hash_hmac($algo, $time, $key, true);
         
         // Dynamic truncation
-        $offset = ord($hash[19]) & 0xf;
+        $hashLen = strlen($hash);
+        $offset = ord($hash[$hashLen - 1]) & 0xf;
         $code = (
             ((ord($hash[$offset]) & 0x7f) << 24) |
             ((ord($hash[$offset + 1]) & 0xff) << 16) |
@@ -988,6 +998,14 @@ class AuthService
         ) % 1000000;
 
         return str_pad((string)$code, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Algorithm to use for new TOTP setup.
+     */
+    public static function getTotpAlgorithm(): string
+    {
+        return self::TOTP_ALGO;
     }
 
     /**
