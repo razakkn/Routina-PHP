@@ -266,6 +266,63 @@ body.hud-login {
     text-align: center;
 }
 
+.success-message {
+    background: rgba(40, 200, 140, 0.12);
+    border: 1px solid rgba(40, 200, 140, 0.5);
+    color: #aef6d8;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.register-hint {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: rgba(223,247,255,0.65);
+}
+
+.suggested-ids {
+    margin: 10px 0 16px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed rgba(55,201,255,0.35);
+    background: rgba(6,14,22,0.45);
+}
+
+.suggested-ids__label {
+    font-size: 0.75rem;
+    color: rgba(223,247,255,0.6);
+    margin-bottom: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.suggested-ids__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-btn {
+    background: transparent;
+    color: rgba(223,247,255,0.75);
+    border: 1px solid rgba(55,201,255,0.35);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    text-transform: none;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.suggestion-btn:hover {
+    color: var(--hud-cyan-strong);
+    border-color: var(--hud-cyan-strong);
+}
+
 .sr-only {
     position: absolute;
     width: 1px;

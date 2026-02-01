@@ -4,27 +4,31 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Account - Routina</title>
+    <link rel="stylesheet" href="/css/login-matrix.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="/css/login-matrix.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
-<body class="galactic-login">
+<body class="hud-login">
 
     <div id="stars"></div>
     <div id="stars2"></div>
 
-    <div id="intro-text">
-        <h1>Routina</h1>
-        <p>[ Create Your Account ]</p>
-    </div>
-
-    <div class="login-bg" aria-hidden="true"></div>
-
     <div class="login-stage">
         <div class="float-wrap">
-            <div class="login-box" tabindex="0">
-                <h2>Welcome to your Routina</h2>
+            <div class="hud-orbit" aria-hidden="true">
+                <div class="hud-ring ring-1"></div>
+                <div class="hud-ring ring-2"></div>
+                <div class="hud-ring ring-3"></div>
+                <div class="hud-ticks"></div>
+                <div class="hud-scan"></div>
+            </div>
+
+            <div class="login-box hud-panel" tabindex="0">
+                <div class="hud-header">
+                    <div class="hud-title">REGISTER</div>
+                    <div class="hud-sub">Create your Routina ID</div>
+                </div>
 
         <?php if (!empty($error)): ?>
             <div class="error-message">
@@ -41,41 +45,29 @@
             <?= csrf_field() ?>
 
             <div class="user-box">
-                <span class="input-icon" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5z" fill="currentColor" opacity="0.9" />
-                        <path d="M2 22c0-3.3 2.7-6 6-6h8c3.3 0 6 2.7 6 6v0H2z" fill="currentColor" opacity="0.9" />
-                    </svg>
-                </span>
+                <label class="sr-only" for="register-routina-id">Routina ID</label>
+                <span class="input-icon" aria-hidden="true">◈</span>
                 <input type="text" name="routina_id" required placeholder="Routina ID" aria-label="Routina ID" value="<?= htmlspecialchars($routina_id ?? '') ?>">
             </div>
 
             <div class="user-box">
-                <span class="input-icon" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M17 8v-2a5 5 0 0 0-10 0v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-                        <rect x="3" y="11" width="18" height="10" rx="2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </span>
+                <label class="sr-only" for="register-email">Email</label>
+                <span class="input-icon" aria-hidden="true">⬡</span>
                 <input type="email" name="email" required placeholder="Email" aria-label="Email" value="<?= htmlspecialchars($email ?? '') ?>">
             </div>
 
             <div class="user-box">
-                <span class="input-icon" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5z" fill="currentColor" opacity="0.9" />
-                        <path d="M2 22c0-3.3 2.7-6 6-6h8c3.3 0 6 2.7 6 6v0H2z" fill="currentColor" opacity="0.9" />
-                    </svg>
-                </span>
+                <label class="sr-only" for="register-password">Password</label>
+                <span class="input-icon" aria-hidden="true">◍</span>
                 <input type="password" name="password" id="password" required placeholder="Password" aria-label="Password">
             </div>
 
             <?php if (!empty($suggestions)): ?>
-                <div class="suggested-ids" style="margin: 10px 0 16px;">
-                    <div style="font-size: 12px; color: rgba(230,255,240,0.7); margin-bottom: 6px;">Try one of these:</div>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <div class="suggested-ids">
+                    <div class="suggested-ids__label">Try one of these:</div>
+                    <div class="suggested-ids__list">
                         <?php foreach ($suggestions as $s): ?>
-                            <button type="button" class="btn btn-sm btn-outline-secondary suggestion-btn" data-id="<?= htmlspecialchars($s) ?>">
+                            <button type="button" class="suggestion-btn" data-id="<?= htmlspecialchars($s) ?>">
                                 @<?= htmlspecialchars($s) ?>
                             </button>
                         <?php endforeach; ?>
@@ -83,11 +75,14 @@
                 </div>
             <?php endif; ?>
 
-            <button type="submit" name="register_btn" id="register-btn">Create Account</button>
-            <div id="register-hint" style="margin-top:8px; font-size:12px; color: rgba(230,255,240,0.6);"></div>
+            <div class="hud-actions">
+                <a href="/login" class="hud-btn hud-btn-ghost">Back to login</a>
+                <button type="submit" name="register_btn" id="register-btn" class="hud-btn">Create account</button>
+            </div>
+            <div id="register-hint" class="register-hint"></div>
         </form>
 
-                <div class="secondary" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div class="hud-links">
                     <a href="/auth/google?action=register" class="google-btn">Sign up with Google</a>
                     <a href="/login" class="create-link">Already have an account?</a>
                 </div>
