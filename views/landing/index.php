@@ -53,14 +53,7 @@
                         <div class="hud-sub">Memory Core</div>
                     </div>
                 </div>
-                <div class="shot">
-                    <div class="shot-label">Screenshot placeholder</div>
-                    <div class="shot-body">
-                        <div class="shot-line"></div>
-                        <div class="shot-line"></div>
-                        <div class="shot-line"></div>
-                    </div>
-                </div>
+                <div class="signal-pulse" aria-hidden="true"></div>
             </div>
         </section>
 
