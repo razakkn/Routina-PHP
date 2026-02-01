@@ -764,12 +764,13 @@ if ($requestUri === '/api/trigger-autofill') {
     ]);
 }
 
-// 1. Root / Landing - Redirect to login
+// 1. Root / Landing
 if ($requestUri === '/' || $requestUri === '/index.php') {
     if (isset($_SESSION['user_id'])) {
         redirect('/dashboard');
     }
-    redirect('/login');
+    view('landing/index');
+    exit;
 }
 
 // 2. Auth Routes
