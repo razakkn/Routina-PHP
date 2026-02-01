@@ -256,10 +256,22 @@ class DashboardController {
         $searchResults = null;
         $searchCounts = null;
         if ($searchQuery !== '') {
-            $journalHits = Journal::search($userId, $searchQuery, 8);
-            $eventHits = Calendar::search($userId, $searchQuery, 8);
-            $taskHits = HomeTask::search($userId, $searchQuery, 8);
-            $familyHits = Family::search($userId, $searchQuery, 8);
+            $journalHits = [];
+            $eventHits = [];
+            $taskHits = [];
+            $familyHits = [];
+
+            try { $journalHits = Journal::search($userId, $searchQuery, 8); }
+            catch (\Throwable $e) { error_log('Dashboard search: journal failed - ' . $e->getMessage()); }
+
+            try { $eventHits = Calendar::search($userId, $searchQuery, 8); }
+            catch (\Throwable $e) { error_log('Dashboard search: calendar failed - ' . $e->getMessage()); }
+
+            try { $taskHits = HomeTask::search($userId, $searchQuery, 8); }
+            catch (\Throwable $e) { error_log('Dashboard search: tasks failed - ' . $e->getMessage()); }
+
+            try { $familyHits = Family::search($userId, $searchQuery, 8); }
+            catch (\Throwable $e) { error_log('Dashboard search: family failed - ' . $e->getMessage()); }
 
             $searchResults = [
                 'journal' => $journalHits,

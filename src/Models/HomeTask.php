@@ -7,19 +7,20 @@ use Routina\Config\Database;
 class HomeTask {
     public static function getAll($userId) {
         $db = Database::getConnection();
-        $stmt = $db->prepare("SELECT * FROM home_tasks WHERE user_id = :uid");
+        $stmt = $db->prepare("SELECT * FROM home_tasks WHERE user_id = :uid ORDER BY (planned_date IS NULL OR planned_date = ''), planned_date ASC, id DESC");
         $stmt->execute(['uid' => $userId]);
         return $stmt->fetchAll();
     }
 
-    public static function create($userId, $title, $freq, $assignee) {
+    public static function create($userId, $title, $freq, $assignee, $plannedDate = null) {
         $db = Database::getConnection();
-        $stmt = $db->prepare("INSERT INTO home_tasks (user_id, title, frequency, assigned_to) VALUES (:uid, :title, :freq, :assignee)");
+        $stmt = $db->prepare("INSERT INTO home_tasks (user_id, title, frequency, assigned_to, planned_date) VALUES (:uid, :title, :freq, :assignee, :pdate)");
         return $stmt->execute([
             'uid' => $userId, 
             'title' => $title, 
             'freq' => $freq, 
-            'assignee' => $assignee
+            'assignee' => $assignee,
+            'pdate' => $plannedDate
         ]);
     }
 

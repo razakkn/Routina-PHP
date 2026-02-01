@@ -22,10 +22,14 @@ class CalendarController
             $start = $_POST['start'] ?? '';
             $end = $_POST['end'] ?? '';
             $type = $_POST['type'] ?? 'event';
+            $isRecurring = !empty($_POST['is_recurring']) ? 1 : 0;
 
-            $allowedTypes = ['event', 'meeting', 'reminder'];
+            $allowedTypes = ['event', 'meeting', 'reminder', 'anniversary', 'occasion'];
             $startTs = $start ? strtotime($start) : false;
             $endTs = $end ? strtotime($end) : false;
+            if (!in_array($type, ['anniversary', 'occasion'], true)) {
+                $isRecurring = 0;
+            }
 
             if ($title === '' || !$startTs || !$endTs || $endTs < $startTs || !in_array($type, $allowedTypes, true)) {
                 return $this->renderCalendar($userId, [
@@ -33,7 +37,7 @@ class CalendarController
                 ]);
             }
 
-            Calendar::create($userId, $title, $start, $end, $type);
+            Calendar::create($userId, $title, $start, $end, $type, $isRecurring);
             header('Location: /calendar');
             exit;
         }
@@ -106,7 +110,7 @@ class CalendarController
 
         // Filter type
         $filterType = $_GET['filter'] ?? 'all';
-        $validFilters = ['all', 'event', 'vacation', 'birthday', 'bill', 'maintenance', 'vehicle'];
+        $validFilters = ['all', 'event', 'vacation', 'birthday', 'bill', 'maintenance', 'vehicle', 'anniversary', 'occasion', 'holiday'];
         if (!in_array($filterType, $validFilters)) {
             $filterType = 'all';
         }
@@ -176,7 +180,7 @@ class CalendarController
         }
 
         // Upcoming events list (next 10)
-        $upcomingEvents = Calendar::upcoming($userId);
+        $upcomingEvents = CalendarService::getUpcomingUserEvents($userId, 30);
 
         view('calendar/index', array_merge([
             'year' => $year,

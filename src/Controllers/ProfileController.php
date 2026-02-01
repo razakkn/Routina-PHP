@@ -5,6 +5,7 @@ namespace Routina\Controllers;
 use Routina\Models\Family;
 use Routina\Models\User;
 use Routina\Services\CurrencyService;
+use Routina\Services\HolidayService;
 
 class ProfileController {
     public function index() {
@@ -103,6 +104,7 @@ class ProfileController {
                 'Gender' => $user->gender,
                 'CountryOfOrigin' => $user->country_of_origin,
                 'CurrentLocation' => $user->current_location,
+                'HolidayCountry' => $user->holiday_country,
                 'PreferredCurrencyCode' => $user->currency,
                 'PreferredCurrencyLabel' => CurrencyService::labelFor($user->currency ?? 'USD'),
                 'SpouseCount' => $user->spouse_count,
@@ -136,7 +138,8 @@ class ProfileController {
                  'in_relationship' => 'In a relationship',
                  'married' => 'Married'
              ],
-             'CurrencyOptions' => $currencyOptions,
+            'CurrencyOptions' => $currencyOptions,
+            'HolidayCountryOptions' => HolidayService::commonCountries(),
              'StatusMessage' => $_SESSION['flash_message'] ?? null,
              'UserId' => $user->id,
              'LoggedSpouseCount' => $user->spouse_count,
@@ -184,6 +187,14 @@ class ProfileController {
             $user->gender = $_POST['Gender'] ?? $user->gender;
             $user->country_of_origin = $_POST['CountryOfOrigin'] ?? $user->country_of_origin;
             $user->current_location = $_POST['CurrentLocation'] ?? $user->current_location;
+            $holidayCountryCustom = strtoupper(trim((string)($_POST['HolidayCountryCustom'] ?? '')));
+            $holidayCountrySelect = strtoupper(trim((string)($_POST['HolidayCountry'] ?? '')));
+            $holidayCountry = $holidayCountryCustom !== '' ? $holidayCountryCustom : $holidayCountrySelect;
+            if ($holidayCountry !== '' && preg_match('/^[A-Z]{2}$/', $holidayCountry)) {
+                $user->holiday_country = $holidayCountry;
+            } elseif ($holidayCountry === '') {
+                $user->holiday_country = null;
+            }
 
             $postedCurrencyCustom = trim((string)($_POST['PreferredCurrencyCodeCustom'] ?? ''));
             $postedCurrencySelect = trim((string)($_POST['PreferredCurrencyCode'] ?? ''));

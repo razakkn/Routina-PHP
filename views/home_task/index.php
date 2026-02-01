@@ -24,18 +24,24 @@
                     <input name="title" class="form-control" placeholder="Mow the lawn" required />
                 </div>
                 <div class="row g-3 mb-3">
-                     <div class="col-6">
+                    <div class="col-6">
                         <label class="form-label">Frequency</label>
-                        <select name="frequency" class="form-select">
+                        <select name="frequency" class="form-select" id="task-frequency">
                             <option value="One-time">One-time</option>
                             <option value="Daily">Daily</option>
                             <option value="Weekly">Weekly</option>
+                            <option value="Planned">Planned</option>
                         </select>
                     </div>
                      <div class="col-6">
                         <label class="form-label">Assignee</label>
                         <input name="assignee" class="form-control" placeholder="Name" />
                     </div>
+                </div>
+                <div class="mb-3" id="planned-date-wrap">
+                    <label class="form-label">Planned Date</label>
+                    <input type="date" name="planned_date" class="form-control" id="planned-date-input" />
+                    <div class="form-text">Only required for planned tasks.</div>
                 </div>
                 <button class="btn btn-primary w-100">Add Task</button>
             </form>
@@ -52,6 +58,9 @@
                                 <?php echo htmlspecialchars($t['title']); ?>
                             </span>
                             <small class="text-muted ms-2"><?php echo htmlspecialchars($t['assigned_to']); ?> - <?php echo htmlspecialchars($t['frequency']); ?></small>
+                            <?php if (!empty($t['planned_date'])): ?>
+                                <small class="text-muted ms-2">• <?php echo htmlspecialchars($t['planned_date']); ?></small>
+                            <?php endif; ?>
                         </div>
                          <!-- Hidden form for toggle -->
                         <form method="post" style="display:none;">
@@ -67,6 +76,26 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function(){
+        const freq = document.getElementById('task-frequency');
+        const wrap = document.getElementById('planned-date-wrap');
+        if (!freq || !wrap) return;
+        const input = document.getElementById('planned-date-input');
+        const sync = () => {
+            const isPlanned = freq.value === 'Planned';
+            if (input) {
+                input.disabled = !isPlanned;
+                input.required = isPlanned;
+                if (!isPlanned) input.value = '';
+            }
+            wrap.style.opacity = isPlanned ? '1' : '0.6';
+        };
+        freq.addEventListener('change', sync);
+        sync();
+    })();
+</script>
 
 <?php 
 $content = ob_get_clean(); 

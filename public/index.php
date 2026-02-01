@@ -204,6 +204,40 @@ function quote_of_the_day(): string {
     return $quotes[$idx];
 }
 
+function avatar_preset_url(?string $key): ?string {
+    $k = strtolower(trim((string)$key));
+    if ($k === '') return null;
+    $icons = [
+        'lavender' => [
+            'bg' => '#E6E6FA',
+            'fg' => '#6D5BD0',
+            'path' => 'M24 6l4 10 10 1-8 6 3 10-9-6-9 6 3-10-8-6 10-1z'
+        ],
+        'sage' => [
+            'bg' => '#9DC183',
+            'fg' => '#1F6F43',
+            'path' => 'M22 34c10-4 16-14 16-24-10 0-20 6-24 16-4-4-6-10-6-16-8 4-12 12-10 20 4 12 16 18 24 12z'
+        ],
+        'teal' => [
+            'bg' => '#008080',
+            'fg' => '#E8FFFA',
+            'path' => 'M8 24c10-10 22-12 32-6-6 10-20 20-32 20-4 0-6-4-4-14z'
+        ],
+        'coral' => [
+            'bg' => '#FF7F50',
+            'fg' => '#FFF5F0',
+            'path' => 'M24 40s-14-8-14-18c0-6 4-10 10-10 4 0 7 2 8 5 1-3 4-5 8-5 6 0 10 4 10 10 0 10-22 18-22 18z'
+        ],
+    ];
+    if (!isset($icons[$k])) return null;
+    $icon = $icons[$k];
+    $svg = "<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 48 48'>"
+         . "<rect width='48' height='48' rx='14' fill='{$icon['bg']}'/>"
+         . "<path d='{$icon['path']}' fill='{$icon['fg']}'/>"
+         . "</svg>";
+    return 'data:image/svg+xml;utf8,' . rawurlencode($svg);
+}
+
 function redirect($path) {
     header('Location: ' . $path);
     exit;

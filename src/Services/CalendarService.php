@@ -3,6 +3,8 @@
 namespace Routina\Services;
 
 use Routina\Config\Database;
+use Routina\Models\User;
+use Routina\Services\HolidayService;
 
 /**
  * Calendar aggregation service.
@@ -35,16 +37,46 @@ class CalendarService
         $calendarEvents = self::getCalendarEvents($userId, $startDate, $endDate);
         foreach ($calendarEvents as $e) {
             $date = date('Y-m-d', strtotime($e['start_datetime']));
+            $eventType = $e['type'] ?? 'event';
             $events[$date][] = [
-                'type' => 'event',
-                'subtype' => $e['type'] ?? 'event',
+                'type' => $eventType,
+                'subtype' => $eventType,
                 'title' => $e['title'],
                 'time' => date('H:i', strtotime($e['start_datetime'])),
                 'end_time' => date('H:i', strtotime($e['end_datetime'])),
+                'color' => self::getEventColor($eventType),
+                'icon' => self::getEventIcon($eventType),
+                'id' => $e['id'],
+                'source' => 'calendar',
+                'is_recurring' => !empty($e['is_recurring']) ? 1 : 0
+            ];
+        }
+
+        // Recurring user events (annual)
+        $recurring = self::getRecurringEvents($userId);
+        foreach ($recurring as $e) {
+            $start = $e['start_datetime'] ?? null;
+            if (!$start) continue;
+            $monthNum = (int)date('m', strtotime($start));
+            $dayNum = (int)date('d', strtotime($start));
+            if (!checkdate($monthNum, $dayNum, $year)) {
+                continue;
+            }
+            $occDate = sprintf('%04d-%02d-%02d', $year, $monthNum, $dayNum);
+            if ($occDate < $startDate || $occDate > $endDate) {
+                continue;
+            }
+            $events[$occDate][] = [
+                'type' => $e['type'] ?? 'event',
+                'subtype' => 'recurring',
+                'title' => $e['title'] ?? 'Recurring event',
+                'time' => date('H:i', strtotime($e['start_datetime'])),
+                'end_time' => date('H:i', strtotime($e['end_datetime'] ?? $e['start_datetime'])),
                 'color' => self::getEventColor($e['type'] ?? 'event'),
                 'icon' => self::getEventIcon($e['type'] ?? 'event'),
-                'id' => $e['id'],
-                'source' => 'calendar'
+                'id' => $e['id'] ?? null,
+                'source' => 'calendar',
+                'is_recurring' => 1
             ];
         }
 
@@ -172,10 +204,32 @@ class CalendarService
             $events[$r['date']][] = $r;
         }
 
+        // Public holidays (per user country)
+        $holidayCountry = self::getUserHolidayCountry($userId);
+        if ($holidayCountry !== '') {
+            $holidays = HolidayService::getPublicHolidays($holidayCountry, $year);
+            foreach ($holidays as $h) {
+                $hDate = (string)($h['date'] ?? '');
+                if ($hDate === '' || $hDate < $startDate || $hDate > $endDate) {
+                    continue;
+                }
+                $name = (string)($h['localName'] ?? ($h['name'] ?? 'Holiday'));
+                $events[$hDate][] = [
+                    'type' => 'holiday',
+                    'subtype' => 'public',
+                    'title' => '🎉 ' . $name,
+                    'color' => self::getEventColor('holiday'),
+                    'icon' => self::getEventIcon('holiday'),
+                    'source' => 'holiday',
+                    'country' => $holidayCountry
+                ];
+            }
+        }
+
         // Sort events within each day
         foreach ($events as $date => &$dayEvents) {
             usort($dayEvents, function ($a, $b) {
-                $order = ['birthday' => 0, 'vacation' => 1, 'event' => 2, 'bill' => 3, 'maintenance' => 4, 'vehicle' => 5];
+                $order = ['birthday' => 0, 'holiday' => 1, 'anniversary' => 2, 'occasion' => 3, 'vacation' => 4, 'event' => 5, 'bill' => 6, 'maintenance' => 7, 'vehicle' => 8];
                 $aOrder = $order[$a['type']] ?? 99;
                 $bOrder = $order[$b['type']] ?? 99;
                 return $aOrder <=> $bOrder;
@@ -329,6 +383,53 @@ class CalendarService
             ];
             
             self::categorizeReminder($reminders, $item, $today, $tomorrow, $weekEnd);
+        }
+
+        // Recurring events (next occurrence)
+        $recurring = self::getRecurringEvents($userId);
+        foreach ($recurring as $e) {
+            $start = $e['start_datetime'] ?? null;
+            if (!$start) continue;
+            $monthNum = (int)date('m', strtotime($start));
+            $dayNum = (int)date('d', strtotime($start));
+            $next = self::nextOccurrenceDate($monthNum, $dayNum, $today, $endDate);
+            if ($next === '') continue;
+
+            $item = [
+                'type' => $e['type'] ?? 'event',
+                'title' => $e['title'] ?? 'Recurring event',
+                'date' => $next,
+                'icon' => self::getEventIcon($e['type'] ?? 'event'),
+                'color' => self::getEventColor($e['type'] ?? 'event'),
+                'link' => '/calendar'
+            ];
+            self::categorizeReminder($reminders, $item, $today, $tomorrow, $weekEnd);
+        }
+
+        // Holidays (public)
+        $holidayCountry = self::getUserHolidayCountry($userId);
+        if ($holidayCountry !== '') {
+            $years = [(int)date('Y'), (int)date('Y', strtotime($endDate))];
+            $years = array_unique($years);
+            foreach ($years as $y) {
+                $holidays = HolidayService::getPublicHolidays($holidayCountry, $y);
+                foreach ($holidays as $h) {
+                    $hDate = (string)($h['date'] ?? '');
+                    if ($hDate === '' || $hDate < $today || $hDate > $endDate) {
+                        continue;
+                    }
+                    $name = (string)($h['localName'] ?? ($h['name'] ?? 'Holiday'));
+                    $item = [
+                        'type' => 'holiday',
+                        'title' => $name,
+                        'date' => $hDate,
+                        'icon' => self::getEventIcon('holiday'),
+                        'color' => self::getEventColor('holiday'),
+                        'link' => '/calendar'
+                    ];
+                    self::categorizeReminder($reminders, $item, $today, $tomorrow, $weekEnd);
+                }
+            }
         }
 
         // Sort each category by date
@@ -580,6 +681,9 @@ class CalendarService
             'meeting' => '#6366f1',
             'reminder' => '#f59e0b',
             'event' => '#3b82f6',
+            'anniversary' => '#f472b6',
+            'occasion' => '#22c55e',
+            'holiday' => '#0ea5e9',
             default => '#6b7280'
         };
     }
@@ -590,8 +694,99 @@ class CalendarService
             'meeting' => '👥',
             'reminder' => '⏰',
             'event' => '📅',
+            'anniversary' => '💞',
+            'occasion' => '🎉',
+            'holiday' => '🏖️',
             default => '📌'
         };
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function getRecurringEvents(int $userId): array
+    {
+        $db = Database::getConnection();
+        $driver = $db->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND is_recurring = 1";
+        if ($driver === 'mysql') {
+            $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND is_recurring = 1";
+        } elseif ($driver === 'pgsql') {
+            $sql = "SELECT * FROM calendar_events WHERE user_id = :uid AND is_recurring = true";
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['uid' => $userId]);
+        return $stmt->fetchAll() ?: [];
+    }
+
+    private static function getUserHolidayCountry(int $userId): string
+    {
+        $user = User::find($userId);
+        if (!$user || empty($user->holiday_country)) {
+            return '';
+        }
+        return strtoupper((string)$user->holiday_country);
+    }
+
+    private static function nextOccurrenceDate(int $month, int $day, string $today, string $endDate): string
+    {
+        $year = (int)date('Y', strtotime($today));
+        $candidate = self::safeDate($year, $month, $day);
+        if ($candidate !== '' && $candidate >= $today && $candidate <= $endDate) {
+            return $candidate;
+        }
+        $candidate = self::safeDate($year + 1, $month, $day);
+        if ($candidate !== '' && $candidate >= $today && $candidate <= $endDate) {
+            return $candidate;
+        }
+        return '';
+    }
+
+    private static function safeDate(int $year, int $month, int $day): string
+    {
+        if (!checkdate($month, $day, $year)) {
+            return '';
+        }
+        return sprintf('%04d-%02d-%02d', $year, $month, $day);
+    }
+
+    /**
+     * Upcoming user events (including recurring) for the next N days.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getUpcomingUserEvents(int $userId, int $daysAhead = 30): array
+    {
+        $today = date('Y-m-d');
+        $endDate = date('Y-m-d', strtotime("+{$daysAhead} days"));
+
+        $events = self::getCalendarEvents($userId, $today, $endDate);
+        $items = [];
+        foreach ($events as $e) {
+            $items[] = $e;
+        }
+
+        $recurring = self::getRecurringEvents($userId);
+        foreach ($recurring as $e) {
+            $start = $e['start_datetime'] ?? null;
+            if (!$start) continue;
+            $monthNum = (int)date('m', strtotime($start));
+            $dayNum = (int)date('d', strtotime($start));
+            $next = self::nextOccurrenceDate($monthNum, $dayNum, $today, $endDate);
+            if ($next === '') continue;
+
+            $items[] = array_merge($e, [
+                'start_datetime' => $next . ' ' . date('H:i', strtotime($e['start_datetime'])),
+                'end_datetime' => $next . ' ' . date('H:i', strtotime($e['end_datetime'] ?? $e['start_datetime'])),
+                'is_recurring' => 1
+            ]);
+        }
+
+        usort($items, function ($a, $b) {
+            return strcmp((string)($a['start_datetime'] ?? ''), (string)($b['start_datetime'] ?? ''));
+        });
+
+        return array_slice($items, 0, 10);
     }
 
     private static function getVacationColor(string $status): string

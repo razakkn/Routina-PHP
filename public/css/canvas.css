@@ -380,6 +380,15 @@ body[data-theme="dark"][data-module="buzz"]{
   --canvas-illustration: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='420' viewBox='0 0 520 420'><path d='M160 260 L240 230 L320 270 L320 190 L240 230 L160 200 Z' fill='none' stroke='%23ea580c' stroke-width='3' opacity='0.45'/><path d='M330 210 Q370 230 330 250' fill='none' stroke='%23a855f7' stroke-width='3' opacity='0.45'/><path d='M350 190 Q410 230 350 270' fill='none' stroke='%23a855f7' stroke-width='3' opacity='0.45'/></svg>");
 }
 
+/* Match dashboard + buzz to the lighter frame used by other modules */
+body[data-module="dashboard"],
+body[data-module="buzz"]{
+  --canvas-bg:
+    linear-gradient(180deg, var(--canvas-0) 0%, var(--canvas-1) 45%, var(--canvas-2) 100%);
+  --canvas-pattern: none;
+  --canvas-illustration: none;
+}
+
 /* Subtle separators and depth so the app shell doesn't float on pure white */
 header, .navbar, .topbar{
   background: rgba(255,255,255,.70);

@@ -37,16 +37,29 @@ class Calendar {
         return $stmt->fetchAll();
     }
 
-    public static function create($userId, $title, $start, $end, $type) {
+    public static function create($userId, $title, $start, $end, $type, $isRecurring = 0) {
         $db = Database::getConnection();
-        $stmt = $db->prepare("INSERT INTO calendar_events (user_id, title, start_datetime, end_datetime, type) VALUES (:uid, :title, :start, :end, :type)");
-        return $stmt->execute([
-            'uid' => $userId, 
-            'title' => $title, 
-            'start' => $start, 
-            'end' => $end,
-            'type' => $type
-        ]);
+        try {
+            $stmt = $db->prepare("INSERT INTO calendar_events (user_id, title, start_datetime, end_datetime, type, is_recurring) VALUES (:uid, :title, :start, :end, :type, :recurring)");
+            return $stmt->execute([
+                'uid' => $userId,
+                'title' => $title,
+                'start' => $start,
+                'end' => $end,
+                'type' => $type,
+                'recurring' => (int)$isRecurring
+            ]);
+        } catch (\PDOException $e) {
+            // Fallback for legacy schemas without is_recurring column.
+            $stmt = $db->prepare("INSERT INTO calendar_events (user_id, title, start_datetime, end_datetime, type) VALUES (:uid, :title, :start, :end, :type)");
+            return $stmt->execute([
+                'uid' => $userId,
+                'title' => $title,
+                'start' => $start,
+                'end' => $end,
+                'type' => $type
+            ]);
+        }
     }
 
     /**

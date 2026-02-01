@@ -57,6 +57,7 @@ try {
             gender TEXT,
             country_of_origin TEXT,
             current_location TEXT,
+            holiday_country TEXT,
             relationship_status TEXT DEFAULT 'single',
             partner_member_id BIGINT
         )");
@@ -66,6 +67,7 @@ try {
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS gender TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS country_of_origin TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS current_location TEXT");
+        $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS holiday_country TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS relationship_status TEXT DEFAULT 'single'");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS family_relation TEXT");
         $db->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS partner_member_id BIGINT");
@@ -348,8 +350,10 @@ try {
             title TEXT,
             start_datetime TEXT,
             end_datetime TEXT,
-            type TEXT DEFAULT 'event'
+            type TEXT DEFAULT 'event',
+            is_recurring INTEGER DEFAULT 0
         )");
+        $db->exec("ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS is_recurring INTEGER DEFAULT 0");
 
         echo "Creating family table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS family_members (
@@ -411,6 +415,7 @@ try {
             title TEXT,
             frequency TEXT,
             assigned_to TEXT,
+            planned_date TEXT,
             is_completed INTEGER DEFAULT 0
         )");
 
@@ -534,6 +539,7 @@ try {
             gender VARCHAR(20),
             country_of_origin VARCHAR(100),
             current_location VARCHAR(255),
+            holiday_country VARCHAR(2),
             relationship_status VARCHAR(50) DEFAULT 'single',
             partner_member_id BIGINT,
             routina_id VARCHAR(50) UNIQUE,
@@ -546,12 +552,13 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // Add missing columns (safe - MySQL ignores if column exists)
-        $userColumns = [
-            'dob' => 'VARCHAR(20)',
-            'gender' => 'VARCHAR(20)',
-            'country_of_origin' => 'VARCHAR(100)',
-            'current_location' => 'VARCHAR(255)',
-            'relationship_status' => "VARCHAR(50) DEFAULT 'single'",
+            $userColumns = [
+                'dob' => 'VARCHAR(20)',
+                'gender' => 'VARCHAR(20)',
+                'country_of_origin' => 'VARCHAR(100)',
+                'current_location' => 'VARCHAR(255)',
+                'holiday_country' => 'VARCHAR(2)',
+                'relationship_status' => "VARCHAR(50) DEFAULT 'single'",
             'partner_member_id' => 'BIGINT',
             'headline' => 'TEXT',
             'linkedin' => 'VARCHAR(255)',
@@ -836,8 +843,14 @@ try {
             start_datetime VARCHAR(30),
             end_datetime VARCHAR(30),
             type VARCHAR(50) DEFAULT 'event',
+            is_recurring TINYINT(1) DEFAULT 0,
             INDEX idx_calendar_events_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        try {
+            $db->exec("ALTER TABLE calendar_events ADD COLUMN is_recurring TINYINT(1) DEFAULT 0");
+        } catch (\PDOException $e) {
+            // Column likely already exists - ignore
+        }
 
         echo "Creating family table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS family_members (
@@ -893,9 +906,16 @@ try {
             title VARCHAR(255),
             frequency VARCHAR(50),
             assigned_to VARCHAR(100),
+            planned_date VARCHAR(20),
             is_completed TINYINT(1) DEFAULT 0,
             INDEX idx_home_tasks_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        try {
+            $db->exec("ALTER TABLE home_tasks ADD COLUMN planned_date VARCHAR(20)");
+        } catch (\PDOException $e) {
+            // Column likely already exists - ignore
+        }
 
         echo "Creating vacation table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS vacations (
@@ -978,6 +998,7 @@ try {
         gender TEXT,
         country_of_origin TEXT,
         current_location TEXT,
+        holiday_country TEXT,
         relationship_status TEXT DEFAULT 'single',
         partner_member_id INTEGER
     )");
@@ -995,6 +1016,7 @@ try {
     $addColumn('gender', 'TEXT');
     $addColumn('country_of_origin', 'TEXT');
     $addColumn('current_location', 'TEXT');
+    $addColumn('holiday_country', 'TEXT');
     $addColumn('relationship_status', "TEXT DEFAULT 'single'");
     $addColumn('partner_member_id', 'INTEGER');
     $addColumn('headline', 'TEXT');
@@ -1263,8 +1285,16 @@ try {
         title TEXT,
         start_datetime TEXT,
         end_datetime TEXT,
-        type TEXT DEFAULT 'event'
+        type TEXT DEFAULT 'event',
+        is_recurring INTEGER DEFAULT 0
     )");
+    // Best-effort: add missing calendar columns for existing databases
+    $columnsStmt = $db->query("PRAGMA table_info(calendar_events)");
+    $columns = $columnsStmt ? $columnsStmt->fetchAll() : [];
+    $columnNames = array_map(function ($col) { return $col['name']; }, $columns);
+    if (!in_array('is_recurring', $columnNames, true)) {
+        $db->exec("ALTER TABLE calendar_events ADD COLUMN is_recurring INTEGER DEFAULT 0");
+    }
 
     echo "Creating family table...\n";
     $db->exec("CREATE TABLE IF NOT EXISTS family_members (
@@ -1336,14 +1366,15 @@ try {
     $addBuzzColumn('responded_at', 'TEXT');
 
     echo "Creating home tasks table...\n";
-    $db->exec("CREATE TABLE IF NOT EXISTS home_tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        title TEXT,
-        frequency TEXT,
-        assigned_to TEXT,
-        is_completed INTEGER DEFAULT 0
-    )");
+        $db->exec("CREATE TABLE IF NOT EXISTS home_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT,
+            frequency TEXT,
+            assigned_to TEXT,
+            planned_date TEXT,
+            is_completed INTEGER DEFAULT 0
+        )");
 
     echo "Creating vacation table...\n";
     $db->exec("CREATE TABLE IF NOT EXISTS vacations (

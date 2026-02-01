@@ -1,0 +1,16 @@
+{
+    "name": "hasu0/routina_php",
+    "description": "Routina Web App",
+    "autoload": {
+        "psr-4": {
+            "Hasu0\\RoutinaPhp\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "razakkn",
+            "email": "razakkn@gmail.com"
+        }
+    ],
+    "require": {}
+}

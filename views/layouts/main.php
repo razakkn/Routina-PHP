@@ -5,6 +5,23 @@ $isAuthenticated = isset($_SESSION['user_id']);
 $userData = isset($_SESSION['user_data']) ? $_SESSION['user_data'] : null;
 $displayName = $userData['name'] ?? 'Guest';
 $initials = substr($displayName, 0, 1);
+$topbarAvatarUrl = null;
+$topbarAvatarPreset = null;
+if ($isAuthenticated && isset($_SESSION['user_id'])) {
+    try {
+        $u = \Routina\Models\User::find((int)$_SESSION['user_id']);
+        if ($u) {
+            if (!empty($u->avatar_image_url)) {
+                $topbarAvatarUrl = $u->avatar_image_url;
+            } elseif (!empty($u->avatar_preset_key)) {
+                $topbarAvatarPreset = $u->avatar_preset_key;
+            }
+        }
+    } catch (\Throwable $e) {
+        $topbarAvatarUrl = null;
+        $topbarAvatarPreset = null;
+    }
+}
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Helper for active class
@@ -168,7 +185,13 @@ $buzzPreview = $layoutData->BuzzPreview;
                 <?php if ($isAuthenticated): ?>
                     <div class="topbar-profile dropdown">
                         <a class="d-flex align-items-center gap-2 text-decoration-none dropdown-toggle" href="#" id="accountMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="button" tabindex="0">
-                            <div class="topbar-avatar initials"><?php echo $initials; ?></div>
+                            <?php if (!empty($topbarAvatarUrl)): ?>
+                                <img class="topbar-avatar-img" src="<?php echo htmlspecialchars($topbarAvatarUrl); ?>" alt="Avatar" />
+                            <?php elseif (!empty($topbarAvatarPreset)): ?>
+                                <img class="topbar-avatar-img" src="<?php echo htmlspecialchars(avatar_preset_url($topbarAvatarPreset)); ?>" alt="Avatar" />
+                            <?php else: ?>
+                                <div class="topbar-avatar initials"><?php echo $initials; ?></div>
+                            <?php endif; ?>
                             <span class="topbar-identity"><?php echo htmlspecialchars($displayName); ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountMenu">

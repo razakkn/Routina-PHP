@@ -276,8 +276,11 @@
     <div class="filter-pills">
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=all" class="filter-pill <?= $filterType === 'all' ? 'active' : '' ?>">All</a>
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=event" class="filter-pill <?= $filterType === 'event' ? 'active' : '' ?>">📅 Events</a>
+        <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=anniversary" class="filter-pill <?= $filterType === 'anniversary' ? 'active' : '' ?>">💞 Anniversary</a>
+        <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=occasion" class="filter-pill <?= $filterType === 'occasion' ? 'active' : '' ?>">🎉 Occasion</a>
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=vacation" class="filter-pill <?= $filterType === 'vacation' ? 'active' : '' ?>">✈️ Vacations</a>
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=birthday" class="filter-pill <?= $filterType === 'birthday' ? 'active' : '' ?>">🎂 Birthdays</a>
+        <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=holiday" class="filter-pill <?= $filterType === 'holiday' ? 'active' : '' ?>">🏖️ Holidays</a>
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=bill" class="filter-pill <?= $filterType === 'bill' ? 'active' : '' ?>">💰 Bills</a>
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=maintenance" class="filter-pill <?= $filterType === 'maintenance' ? 'active' : '' ?>">🔧 Maintenance</a>
         <a href="?year=<?= $year ?>&month=<?= $month ?>&filter=vehicle" class="filter-pill <?= $filterType === 'vehicle' ? 'active' : '' ?>">🚗 Vehicle</a>
@@ -331,8 +334,11 @@
         <div class="legend-item"><span class="event-dot" style="background: #3b82f6;"></span> Event</div>
         <div class="legend-item"><span class="event-dot" style="background: #6366f1;"></span> Meeting</div>
         <div class="legend-item"><span class="event-dot" style="background: #f59e0b;"></span> Reminder</div>
+        <div class="legend-item"><span class="event-dot" style="background: #f472b6;"></span> Anniversary</div>
+        <div class="legend-item"><span class="event-dot" style="background: #22c55e;"></span> Occasion</div>
         <div class="legend-item"><span class="event-dot" style="background: #14b8a6;"></span> Vacation</div>
         <div class="legend-item"><span class="event-dot" style="background: #ec4899;"></span> Birthday</div>
+        <div class="legend-item"><span class="event-dot" style="background: #0ea5e9;"></span> Holiday</div>
         <div class="legend-item"><span class="event-dot" style="background: #f59e0b;"></span> Bill Due</div>
         <div class="legend-item"><span class="event-dot" style="background: #6366f1;"></span> Maintenance</div>
         <div class="legend-item"><span class="event-dot" style="background: #8b5cf6;"></span> Registration</div>
@@ -365,16 +371,19 @@
             <?php else: ?>
                 <?php foreach ($upcomingEvents as $e): ?>
                     <div class="upcoming-item">
-                        <div class="upcoming-icon">
-                            <?php
-                            $icon = match($e['type'] ?? 'event') {
-                                'meeting' => '👥',
-                                'reminder' => '⏰',
-                                default => '📅'
-                            };
-                            echo $icon;
-                            ?>
-                        </div>
+                    <div class="upcoming-icon">
+                        <?php
+                        $icon = match($e['type'] ?? 'event') {
+                            'meeting' => '👥',
+                            'reminder' => '⏰',
+                            'anniversary' => '💞',
+                            'occasion' => '🎉',
+                            'holiday' => '🏖️',
+                            default => '📅'
+                        };
+                        echo $icon;
+                        ?>
+                    </div>
                         <div class="upcoming-details">
                             <div class="upcoming-title"><?= htmlspecialchars($e['title']) ?></div>
                             <div class="upcoming-meta">
@@ -412,11 +421,19 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Type</label>
-                    <select name="type" class="form-select">
+                    <select name="type" class="form-select event-type-select">
                         <option value="event">📅 Event</option>
                         <option value="meeting">👥 Meeting</option>
                         <option value="reminder">⏰ Reminder</option>
+                        <option value="anniversary">💞 Anniversary</option>
+                        <option value="occasion">🎉 Occasion</option>
                     </select>
+                </div>
+                <div class="mb-3 event-recurring-wrap">
+                    <div class="form-check">
+                        <input class="form-check-input event-recurring-input" type="checkbox" name="is_recurring" value="1" id="recurringMain">
+                        <label class="form-check-label" for="recurringMain">Repeat yearly</label>
+                    </div>
                 </div>
                 <button class="btn btn-primary w-100">Add Event</button>
             </form>
@@ -446,11 +463,19 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Type</label>
-                <select name="type" class="form-select">
+                <select name="type" class="form-select event-type-select">
                     <option value="event">📅 Event</option>
                     <option value="meeting">👥 Meeting</option>
                     <option value="reminder">⏰ Reminder</option>
+                    <option value="anniversary">💞 Anniversary</option>
+                    <option value="occasion">🎉 Occasion</option>
                 </select>
+            </div>
+            <div class="mb-3 event-recurring-wrap">
+                <div class="form-check">
+                    <input class="form-check-input event-recurring-input" type="checkbox" name="is_recurring" value="1" id="recurringModal">
+                    <label class="form-check-label" for="recurringModal">Repeat yearly</label>
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-fill">Add Event</button>
@@ -496,6 +521,10 @@ function showEventDetails(event) {
     if (event.relation) {
         html += '<p class="mb-1"><strong>Relation:</strong> ' + event.relation + '</p>';
     }
+
+    if (event.is_recurring) {
+        html += '<p class="mb-1"><strong>Repeats:</strong> Yearly</p>';
+    }
     
     if (event.age !== undefined && event.age > 0) {
         html += '<p class="mb-1"><strong>Turning:</strong> ' + event.age + ' years old</p>';
@@ -524,6 +553,24 @@ function showEventDetails(event) {
     contentEl.innerHTML = html;
     modal.classList.add('show');
 }
+
+(function () {
+    const selects = document.querySelectorAll('.event-type-select');
+    const sync = (select) => {
+        const wrap = select.closest('form')?.querySelector('.event-recurring-wrap');
+        const input = select.closest('form')?.querySelector('.event-recurring-input');
+        if (!wrap || !input) return;
+        const allow = select.value === 'anniversary' || select.value === 'occasion';
+        wrap.style.display = allow ? 'block' : 'none';
+        if (!allow) {
+            input.checked = false;
+        }
+    };
+    selects.forEach((sel) => {
+        sel.addEventListener('change', () => sync(sel));
+        sync(sel);
+    });
+})();
 </script>
 
 <?php 

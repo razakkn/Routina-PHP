@@ -23,8 +23,12 @@
 
     $avatarInitial = strtoupper(substr($name !== '' ? $name : 'U', 0, 1));
     $avatarUrl = null;
+    $avatarPreset = null;
     if (!empty($Model->Avatar) && !empty($Model->Avatar->ImageUrl)) {
         $avatarUrl = (string)$Model->Avatar->ImageUrl;
+    }
+    if (!empty($Model->Avatar) && !empty($Model->Avatar->PresetKey)) {
+        $avatarPreset = (string)$Model->Avatar->PresetKey;
     }
 
     $familyMembers = is_array($Model->FamilyMembers ?? null) ? $Model->FamilyMembers : [];
@@ -36,6 +40,8 @@
             <div class="profile-avatar">
                 <?php if ($avatarUrl): ?>
                     <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Avatar" />
+                <?php elseif ($avatarPreset): ?>
+                    <img src="<?php echo htmlspecialchars(avatar_preset_url($avatarPreset)); ?>" alt="Avatar" />
                 <?php else: ?>
                     <div class="profile-avatar__initial"><?php echo htmlspecialchars($avatarInitial); ?></div>
                 <?php endif; ?>
@@ -85,6 +91,8 @@
                         <div class="profile-avatar" style="width:72px;height:72px;">
                             <?php if (!empty($Model->Avatar->HasImage) && !empty($Model->Avatar->ImageUrl)): ?>
                                 <img src="<?php echo htmlspecialchars((string)$Model->Avatar->ImageUrl); ?>" alt="Avatar" />
+                            <?php elseif (!empty($Model->Avatar->PresetKey)): ?>
+                                <img src="<?php echo htmlspecialchars(avatar_preset_url((string)$Model->Avatar->PresetKey)); ?>" alt="Avatar" />
                             <?php else: ?>
                                 <div class="profile-avatar__initial"><?php echo htmlspecialchars($avatarInitial); ?></div>
                             <?php endif; ?>
@@ -101,10 +109,9 @@
                     <div class="mb-3">
                         <div class="small text-uppercase text-muted fw-semibold">Presets</div>
                         <div class="d-flex gap-2" style="margin-top:10px; flex-wrap: wrap;">
-                            <?php $colors = ['lavender' => '#E6E6FA', 'sage' => '#9DC183', 'teal' => '#008080', 'coral' => '#FF7F50']; ?>
                             <?php foreach (($Model->AvatarPresets ?? []) as $key => $label): ?>
                                 <button type="submit" name="AvatarPresetKey" value="<?php echo htmlspecialchars((string)$key); ?>" class="btn btn-outline-secondary" style="padding: 8px 12px;">
-                                    <span style="display:inline-block;width:12px;height:12px;border-radius:99px;background:<?php echo htmlspecialchars($colors[$key] ?? '#ccc'); ?>;margin-right:8px;"></span>
+                                    <img src="<?php echo htmlspecialchars(avatar_preset_url((string)$key)); ?>" alt="" style="width:18px;height:18px;border-radius:6px;margin-right:8px;" />
                                     <?php echo htmlspecialchars((string)$label); ?>
                                 </button>
                             <?php endforeach; ?>
@@ -335,6 +342,26 @@
                                         <div class="form-text">If you type a code here, it will override the dropdown.</div>
                                     </div>
                                     <div class="col-md-6">
+                                        <label class="form-label">Holiday country (public holidays)</label>
+                                        <select name="HolidayCountry" class="form-select">
+                                            <option value="">Select country code</option>
+                                            <?php $holidayOptions = ($Model->HolidayCountryOptions ?? []); ?>
+                                            <?php foreach ($holidayOptions as $code => $label): ?>
+                                                <?php
+                                                    $code = (string)$code;
+                                                    $label = (string)$label;
+                                                    $selectedCode = strtoupper((string)($input['HolidayCountry'] ?? ''));
+                                                    $optText = $code . ' — ' . $label;
+                                                ?>
+                                                <option value="<?php echo htmlspecialchars($code); ?>" <?php echo ($selectedCode === $code) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($optText); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input name="HolidayCountryCustom" class="form-control mt-2" value="" placeholder="Or type ISO code (e.g., US)" maxlength="2" />
+                                        <div class="form-text">Use a 2-letter ISO country code.</div>
+                                    </div>
+                                    <div class="col-md-6">
                                         <label class="form-label">Spouses recorded</label>
                                         <input name="SpouseCount" type="number" class="form-control" value="<?php echo htmlspecialchars((string)($input['SpouseCount'] ?? '0')); ?>" />
                                     </div>
@@ -444,6 +471,18 @@
                                 $ccyText = ($ccyLabel !== '' && $ccyLabel !== $ccyCode) ? ($ccyCode . ' — ' . $ccyLabel) : $ccyCode;
                             ?>
                             <div class="profile-item__value"><?php echo htmlspecialchars($ccyText); ?></div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-item__label">Holiday country</div>
+                            <?php
+                                $holidayCode = strtoupper((string)($input['HolidayCountry'] ?? ''));
+                                $holidayOptions = ($Model->HolidayCountryOptions ?? []);
+                                $holidayLabel = ($holidayCode !== '') ? (string)($holidayOptions[$holidayCode] ?? '') : '';
+                                $holidayText = ($holidayCode !== '' && $holidayLabel !== '')
+                                    ? ($holidayCode . ' — ' . $holidayLabel)
+                                    : ($holidayCode !== '' ? $holidayCode : '—');
+                            ?>
+                            <div class="profile-item__value"><?php echo htmlspecialchars($holidayText); ?></div>
                         </div>
                     </div>
                 </div>

@@ -31,6 +31,7 @@ class User
     public ?string $gender = null;
     public ?string $country_of_origin = null;
     public ?string $current_location = null;
+    public ?string $holiday_country = null;
     public string $relationship_status = 'single';
     public ?int $partner_member_id = null;
     public ?string $family_relation = null;
@@ -63,6 +64,7 @@ class User
         $this->gender = $data['gender'] ?? null;
         $this->country_of_origin = $data['country_of_origin'] ?? null;
         $this->current_location = $data['current_location'] ?? null;
+        $this->holiday_country = $data['holiday_country'] ?? null;
         $this->relationship_status = $data['relationship_status'] ?? 'single';
         $this->partner_member_id = isset($data['partner_member_id']) ? (int)$data['partner_member_id'] : null;
         $this->family_relation = $data['family_relation'] ?? null;
@@ -135,6 +137,7 @@ class User
                 gender = :gender,
                 country_of_origin = :country,
                 current_location = :location,
+                holiday_country = :holiday_country,
                 relationship_status = :rel_status,
                 partner_member_id = :partner_id,
                 share_profile_publicly = :share_profile_publicly
@@ -159,6 +162,7 @@ class User
                 'gender' => $this->gender,
                 'country' => $this->country_of_origin,
                 'location' => $this->current_location,
+                'holiday_country' => $this->holiday_country,
                 'rel_status' => $this->relationship_status,
                 'partner_id' => $this->partner_member_id,
                 'share_profile_publicly' => $this->share_profile_publicly ? 1 : 0,

@@ -49,6 +49,7 @@ try {
             gender VARCHAR(20),
             country_of_origin VARCHAR(100),
             current_location VARCHAR(255),
+            holiday_country VARCHAR(2),
             relationship_status VARCHAR(50) DEFAULT 'single',
             partner_member_id BIGINT,
             routina_id VARCHAR(50) UNIQUE,
@@ -59,6 +60,11 @@ try {
             facebook_url VARCHAR(255),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        try {
+            $db->exec("ALTER TABLE users ADD COLUMN holiday_country VARCHAR(2)");
+        } catch (\PDOException $e) {
+            // Column likely already exists - ignore
+        }
 
         // Password resets table
         echo "Creating password_resets table...\n";
@@ -314,8 +320,14 @@ try {
             start_datetime VARCHAR(30),
             end_datetime VARCHAR(30),
             type VARCHAR(50) DEFAULT 'event',
+            is_recurring TINYINT(1) DEFAULT 0,
             INDEX idx_calendar_events_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        try {
+            $db->exec("ALTER TABLE calendar_events ADD COLUMN is_recurring TINYINT(1) DEFAULT 0");
+        } catch (\PDOException $e) {
+            // Column likely already exists - ignore
+        }
 
         echo "Creating family table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS family_members (
@@ -358,9 +370,16 @@ try {
             title VARCHAR(255),
             frequency VARCHAR(50),
             assigned_to VARCHAR(100),
+            planned_date VARCHAR(20),
             is_completed TINYINT(1) DEFAULT 0,
             INDEX idx_home_tasks_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        try {
+            $db->exec("ALTER TABLE home_tasks ADD COLUMN planned_date VARCHAR(20)");
+        } catch (\PDOException $e) {
+            // Column likely already exists - ignore
+        }
 
         echo "Creating vacation table...\n";
         $db->exec("CREATE TABLE IF NOT EXISTS vacations (

@@ -193,14 +193,10 @@ body[data-module="dashboard"] .grid .card:nth-child(3){ animation-delay: -3.4s; 
 }
 
 /* Module-specific opacity tweaks */
-body[data-module="dashboard"] #app-3d{ opacity: 0.98; }
+body[data-module="dashboard"] #app-3d{ opacity: 0.38; }
+body[data-module="buzz"] #app-3d{ opacity: 0.30; }
 body[data-module="vacation"] #app-3d{ opacity: 0.90; }
 body[data-module="vehicle"] #app-3d{ opacity: 0.92; }
-
-/* Dashboard gets a more vivid “space” grade */
-body[data-module="dashboard"] #app-3d{
-  filter: saturate(1.22) contrast(1.08);
-}
 
 @media (prefers-reduced-motion: reduce){
   #app-3d{ display: none; }
