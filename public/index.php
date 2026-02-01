@@ -73,26 +73,14 @@ if (is_file($cfgFile)) {
             (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
         );
         if (!$isHttps) {
-            $sanitizeHost = function ($host): string {
-                $host = trim((string)$host);
-                if ($host === '') return '';
-                if (preg_match('/[\r\n]/', $host)) return '';
-                if (!preg_match('/^(?:[A-Za-z0-9-]+\.)*[A-Za-z0-9-]+(?::\d+)?$/', $host)) {
-                    return '';
+            $appHost = (string)(parse_url($appUrl, PHP_URL_HOST) ?? '');
+            $appPort = parse_url($appUrl, PHP_URL_PORT);
+            $host = '';
+            if ($appHost !== '' && preg_match('/^(?:[A-Za-z0-9-]+\.)*[A-Za-z0-9-]+$/', $appHost)) {
+                $host = $appHost;
+                if ($appPort) {
+                    $host .= ':' . $appPort;
                 }
-                return $host;
-            };
-
-            $appHost = '';
-            $appPort = null;
-            if ($appUrl !== '') {
-                $appHost = (string)(parse_url($appUrl, PHP_URL_HOST) ?? '');
-                $appPort = parse_url($appUrl, PHP_URL_PORT);
-            }
-
-            $host = $appHost !== '' ? $appHost : ($sanitizeHost($_SERVER['HTTP_HOST'] ?? '') ?: $sanitizeHost($_SERVER['SERVER_NAME'] ?? ''));
-            if ($host !== '' && $appPort) {
-                $host .= ':' . $appPort;
             }
             $uri = $_SERVER['REQUEST_URI'] ?? '/';
             if ($host !== '') {

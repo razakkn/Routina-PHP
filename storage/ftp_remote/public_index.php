@@ -507,7 +507,7 @@ if ($requestUri === '/api/vehicle/models') {
     }
 
     $ttl = 30 * 24 * 60 * 60;
-    $key = 'vpic_models_' . $year . '_' . sha1(strtolower($make));
+    $key = 'vpic_models_' . $year . '_' . hash('sha256', strtolower($make));
     $cached = cache_get_json($key, $ttl);
     if (is_array($cached)) {
         json_response($cached);
