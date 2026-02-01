@@ -165,6 +165,10 @@ class AuthController {
             view('account/forgot_password', ['error' => 'Please enter your email address.']);
             return;
         }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            view('account/forgot_password', ['error' => 'Please enter a valid email address.']);
+            return;
+        }
 
         $token = AuthService::createPasswordResetToken($email);
         
@@ -179,7 +183,7 @@ class AuthController {
         }
 
         // Always show success to prevent email enumeration
-        view('account/forgot_password', ['success' => 'If that email exists, a reset link has been sent.']);
+        view('account/forgot_password', ['success' => 'If that email exists, a reset link has been sent. Please check your inbox and spam folder.']);
     }
 
     public function resetPassword() {
