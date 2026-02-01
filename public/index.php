@@ -928,6 +928,12 @@ if ($requestUri === '/vacation/trip') {
     exit;
 }
 
+if ($requestUri === '/vacation/detail') {
+    $controller = new \Routina\Controllers\VacationController();
+    $controller->detail();
+    exit;
+}
+
 if ($requestUri === '/vacation/delete' && $method === 'POST') {
     require_login();
     $controller = new \Routina\Controllers\VacationController();
@@ -974,6 +980,12 @@ if ($requestUri === '/finance/reflection') {
 if ($requestUri === '/finance/diary') {
     $controller = new \Routina\Controllers\FinanceController();
     $controller->diary();
+    exit;
+}
+
+if ($requestUri === '/finance/diary/detail') {
+    $controller = new \Routina\Controllers\FinanceController();
+    $controller->diaryDetail();
     exit;
 }
 

@@ -527,7 +527,7 @@ class FinanceController {
             $notes = trim($_POST['notes'] ?? '');
 
             if ($notes === '') {
-                $entries = FinanceDiary::getAll($_SESSION['user_id']);
+                $entries = FinanceDiary::getSummaries($_SESSION['user_id']);
                 view('finance/diary', ['entries' => $entries, 'error' => 'Please write a note before saving.']);
                 return;
             }
@@ -537,7 +537,33 @@ class FinanceController {
             exit;
         }
 
-        $entries = FinanceDiary::getAll($_SESSION['user_id']);
+        $entries = FinanceDiary::getSummaries($_SESSION['user_id']);
         view('finance/diary', ['entries' => $entries]);
+    }
+
+    public function diaryDetail() {
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo 'Unauthorized';
+            exit;
+        }
+
+        $id = $_GET['id'] ?? '';
+        if (!is_numeric($id)) {
+            http_response_code(400);
+            echo 'Invalid request';
+            exit;
+        }
+
+        $entry = FinanceDiary::findByIdForUser($_SESSION['user_id'], (int)$id);
+        if (!$entry) {
+            http_response_code(404);
+            echo 'Not found';
+            exit;
+        }
+
+        header('Content-Type: text/html; charset=utf-8');
+        view('finance/partials/diary_detail', ['entry' => $entry]);
+        exit;
     }
 }

@@ -17,8 +17,10 @@
         </div>
     <?php endif; ?>
 
+    <link rel="stylesheet" href="/css/master-detail.css" />
+
     <div class="grid">
-        <div class="card">
+        <div class="card" style="grid-column: 1 / -1;">
             <div class="card-kicker">Plan Trip</div>
             <form method="post" class="mt-3">
                 <?= csrf_field() ?>
@@ -58,35 +60,53 @@
                 <button class="btn btn-primary w-100">Add Trip</button>
             </form>
         </div>
-
-        <?php foreach($vacations as $v): ?>
-             <div class="card">
-                <div class="card-kicker"><?php echo htmlspecialchars($v['status']); ?></div>
-                <div class="card-title">
-                    <a class="text-decoration-none" href="/vacation/trip?id=<?php echo $v['id']; ?>">
-                        <?php echo htmlspecialchars($v['destination']); ?>
-                    </a>
-                </div>
-                <div class="muted">
-                     <?php echo date('M d', strtotime($v['start_date'])); ?> - 
-                     <?php echo date('M d, Y', strtotime($v['end_date'])); ?>
-                </div>
-                <?php if (!empty($v['budget'])): ?>
-                    <div class="muted">Budget: <?php echo number_format((float)$v['budget'], 2); ?></div>
-                <?php endif; ?>
-                <div class="card-buttons">
-                    <a class="btn-soft" href="/vacation/edit?id=<?php echo $v['id']; ?>">Edit</a>
-                    <a class="btn-soft" href="/vacation/trip?id=<?php echo $v['id']; ?>">Open</a>
-                </div>
-             </div>
-        <?php endforeach; ?>
-        
-        <?php if (empty($vacations)): ?>
-            <div class="card d-flex align-items-center justify-content-center text-muted p-5">
-                 No trips planned.
-             </div>
-        <?php endif; ?>
     </div>
+
+    <div class="md-shell" data-module="vacation">
+        <div class="md-list card">
+            <div class="md-list-header">
+                <div>
+                    <div class="card-kicker">Trips</div>
+                    <div class="text-muted small">Select a trip to view details.</div>
+                </div>
+            </div>
+
+            <?php if (empty($vacations)): ?>
+                <div class="text-muted text-center py-4">No trips planned.</div>
+            <?php else: ?>
+                <div class="list-group list-group-flush mt-3 md-list-items">
+                    <?php foreach($vacations as $v): ?>
+                        <button type="button"
+                                class="list-group-item list-group-item-action md-item"
+                                data-detail-url="/vacation/detail?id=<?php echo (int)$v['id']; ?>">
+                            <div class="d-flex justify-content-between">
+                                <div class="fw-semibold"><?php echo htmlspecialchars($v['destination']); ?></div>
+                                <div class="text-muted small"><?php echo htmlspecialchars($v['status']); ?></div>
+                            </div>
+                            <div class="text-muted mt-1">
+                                 <?php echo date('M d', strtotime($v['start_date'])); ?> -
+                                 <?php echo date('M d, Y', strtotime($v['end_date'])); ?>
+                            </div>
+                            <?php if (!empty($v['budget'])): ?>
+                                <div class="text-muted mt-1">Budget: <?php echo number_format((float)$v['budget'], 2); ?></div>
+                            <?php endif; ?>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="md-detail card">
+            <div class="md-detail-top">
+                <button type="button" class="btn btn-outline-secondary btn-sm md-back">Back</button>
+            </div>
+            <div class="md-detail-content">
+                <div class="text-muted">Select a trip to see details.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/master-detail.js" defer></script>
 </div>
 
 <?php 

@@ -1,0 +1,90 @@
+.md-shell {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+
+.md-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.md-list-items .md-item {
+    text-align: left;
+    border: none;
+}
+
+.md-detail {
+    display: none;
+}
+
+.md-detail-top {
+    display: none;
+    justify-content: flex-start;
+    margin-bottom: 12px;
+}
+
+.md-detail-content {
+    min-height: 120px;
+}
+
+.md-shell.md-drill .md-list {
+    display: none;
+}
+
+.md-shell.md-drill .md-detail {
+    display: block;
+}
+
+@media (min-width: 900px) and (orientation: landscape) {
+    .md-shell {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    }
+
+    .md-shell.md-split .md-detail {
+        display: block;
+    }
+
+    .md-detail-top {
+        display: none;
+    }
+
+    .md-shell.md-split .md-detail {
+        position: sticky;
+        top: 12px;
+        align-self: start;
+        max-height: calc(100vh - 120px);
+        overflow: auto;
+    }
+}
+
+.md-shell.md-drill .md-detail-top {
+    display: flex;
+}
+
+.md-detail-header {
+    margin-bottom: 10px;
+}
+
+.md-detail-title {
+    font-weight: 700;
+}
+
+.md-detail-sub {
+    font-size: 0.9rem;
+    color: rgba(0,0,0,0.6);
+}
+
+.md-detail-text {
+    line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .md-shell * {
+        scroll-behavior: auto;
+        transition: none !important;
+    }
+}
