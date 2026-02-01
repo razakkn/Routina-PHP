@@ -74,6 +74,11 @@
                 loadDetail(item.getAttribute('data-detail-url'));
                 return;
             }
+            if (item && item.getAttribute('data-detail-html')) {
+                e.preventDefault();
+                setDetailHtml(item.getAttribute('data-detail-html'));
+                return;
+            }
             if (templateBtn) {
                 const key = templateBtn.getAttribute('data-detail-template');
                 if (!key) return;

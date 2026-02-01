@@ -82,6 +82,16 @@
     line-height: 1.6;
 }
 
+.md-section-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.md-section-list .btn {
+    border-radius: 999px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .md-shell * {
         scroll-behavior: auto;
