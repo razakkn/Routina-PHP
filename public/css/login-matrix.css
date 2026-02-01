@@ -341,6 +341,31 @@ body.hud-login {
     .hud-actions { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 480px) {
+    .login-stage { padding: 32px 12px; }
+    .hud-panel { padding: 22px 18px 20px; }
+    .hud-title { font-size: 0.95rem; letter-spacing: 0.2em; }
+    .hud-sub { font-size: 0.72rem; letter-spacing: 0.16em; }
+    .user-box { padding: 8px 10px; }
+    .user-box input { font-size: 0.95rem; }
+    .hud-actions { gap: 8px; }
+    .hud-btn { padding: 10px 8px; font-size: 0.78rem; }
+    .hud-links { flex-direction: column; align-items: center; text-align: center; }
+}
+
+@media (min-width: 601px) and (max-width: 820px) {
+    .float-wrap { width: min(560px, 90vw); height: min(560px, 90vw); }
+    .hud-panel { width: min(440px, 86vw); }
+    .hud-title { font-size: 1rem; }
+}
+
+@media (min-width: 1024px) {
+    .float-wrap { width: 600px; height: 600px; }
+    .hud-panel { width: 440px; }
+    .hud-title { font-size: 1.15rem; }
+    .hud-sub { font-size: 0.9rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     #stars, #stars2, .hud-ring, .hud-ticks, .hud-scan {
         animation: none !important;
