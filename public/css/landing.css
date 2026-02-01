@@ -200,35 +200,6 @@ main { position: relative; z-index: 1; }
 
 @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
 
-.signal-pulse {
-    width: min(260px, 60vw);
-    height: min(260px, 60vw);
-    border-radius: 50%;
-    border: 1px solid rgba(55,201,255,0.25);
-    box-shadow: 0 0 30px rgba(55,201,255,0.15);
-    position: relative;
-    animation: pulse 4.8s ease-in-out infinite;
-}
-
-.signal-pulse::before,
-.signal-pulse::after {
-    content: '';
-    position: absolute;
-    inset: 18%;
-    border-radius: 50%;
-    border: 1px dashed rgba(55,201,255,0.2);
-}
-
-.signal-pulse::after {
-    inset: 34%;
-    border-style: solid;
-    border-color: rgba(55,201,255,0.35);
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(0.98); opacity: 0.75; }
-    50% { transform: scale(1.03); opacity: 1; }
-}
 
 .pillars {
     display: grid;

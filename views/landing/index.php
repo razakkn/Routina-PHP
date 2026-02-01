@@ -53,7 +53,6 @@
                         <div class="hud-sub">Memory Core</div>
                     </div>
                 </div>
-                <div class="signal-pulse" aria-hidden="true"></div>
             </div>
         </section>
 
