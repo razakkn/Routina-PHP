@@ -10,6 +10,7 @@ use Routina\Models\Health;
 use Routina\Models\HomeTask;
 use Routina\Models\Journal;
 use Routina\Models\Transaction;
+use Routina\Models\User;
 use Routina\Models\Vacation;
 use Routina\Models\VehicleMaintenance;
 use Routina\Services\CalendarService;
@@ -60,6 +61,8 @@ class DashboardController {
 
         $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
         $quote = QuoteService::quoteOfTheDay($userId);
+        $user = User::find($userId);
+        $displayName = $user ? $user->getDisplayName() : 'User';
 
         $searchQuery = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
         if (strlen($searchQuery) > 120) {
@@ -308,6 +311,7 @@ class DashboardController {
             'GreetingLine' => $this->greetingLine(),
             'TodayLabel' => date('l, M j'),
             'QuoteOfTheDay' => $quote,
+            'DisplayName' => $displayName,
 
             'BuzzUnread' => $buzzUnread,
 
@@ -344,3 +348,16 @@ class DashboardController {
         view('dashboard/index', ['Model' => $model]);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

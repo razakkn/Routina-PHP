@@ -26,17 +26,14 @@
 	body.dataset.module = moduleName;
 
 	const STORAGE_KEYS = {
-		theme: "routina.theme",
 		sidebar: "routina.sidebar",
 		eggHistory: "routina.eggs.history"
 	};
 
-	const themeToggle = document.querySelector("[data-theme-toggle]");
 	const sidebarToggles = document.querySelectorAll("[data-sidebar-toggle]");
 	const sidebarDismiss = document.querySelector("[data-sidebar-dismiss]");
 	// appShell/hasSidebar are declared above for module detection.
 	const moduleTabs = document.querySelector(".module-tabs");
-	const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 	const compactSidebarMedia = window.matchMedia("(max-width: 1180px)");
 
 	const onMediaChange = (mediaQuery, handler) => {
@@ -79,21 +76,11 @@
 		}
 	};
 
-	const applyTheme = (theme) => {
-		const nextTheme = theme === "dark" ? "dark" : "light";
-		body.dataset.theme = nextTheme;
-		document.documentElement.style.colorScheme = nextTheme;
-		if (themeToggle) {
-			const isDark = nextTheme === "dark";
-			themeToggle.setAttribute("aria-pressed", String(isDark));
-			themeToggle.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
-		}
+	const applyTheme = () => {
+		body.dataset.theme = "light";
+		document.documentElement.style.colorScheme = "light";
 	};
-
-	const preferedTheme = () => (colorSchemeMedia.matches ? "dark" : "light");
-	const storedTheme = safeGet(STORAGE_KEYS.theme);
-	const initialTheme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : preferedTheme();
-	applyTheme(initialTheme);
+	applyTheme();
 
 	// Highlight active module tab
 	if (moduleTabs) {
@@ -295,12 +282,6 @@
 			bubble.appendChild(text);
 		}
 
-		// Dark mode tweaks
-		if (body.dataset.theme === "dark") {
-			bubble.style.background = "rgba(10,13,26,0.58)";
-			bubble.style.border = "1px solid rgba(124,137,210,0.28)";
-		}
-
 		egg.appendChild(bubble);
 		document.body.appendChild(egg);
 
@@ -322,20 +303,7 @@
 		injectEasterEgg();
 	}
 
-	if (themeToggle) {
-		themeToggle.addEventListener("click", () => {
-			const nextTheme = body.dataset.theme === "dark" ? "light" : "dark";
-			applyTheme(nextTheme);
-			safeSet(STORAGE_KEYS.theme, nextTheme);
-		});
-	}
-
-	onMediaChange(colorSchemeMedia, (event) => {
-		const saved = safeGet(STORAGE_KEYS.theme);
-		if (!saved) {
-			applyTheme(event.matches ? "dark" : "light");
-		}
-	});
+	// Theme toggle removed: keep light theme only.
 
 	if (!hasSidebar) {
 		return;

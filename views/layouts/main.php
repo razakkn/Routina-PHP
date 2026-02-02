@@ -54,9 +54,8 @@ $buzzPreview = $layoutData->BuzzPreview;
     <?php if ($isAuthenticated && $module === 'vacation'): ?>
         <link rel="stylesheet" href="/css/place_autocomplete.css" />
     <?php endif; ?>
-    <link rel="stylesheet" href="/css/app-3d.css" />
-    <?php if ($isAuthenticated && $module === 'dashboard'): ?>
-        <link rel="stylesheet" href="/css/dashboard.css" />
+    <?php if ($module === 'dashboard'): ?>
+        <link rel="stylesheet" href="/css/dashboard_v2.css" />
     <?php endif; ?>
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" />
@@ -67,11 +66,9 @@ $buzzPreview = $layoutData->BuzzPreview;
         <link rel="stylesheet" href="/css/family_tree.css" />
     <?php endif; ?>
 </head>
-<body data-theme="light" data-sidebar-state="expanded" data-has-3d="<?php echo $isAuthenticated ? 'true' : 'false'; ?>" data-module="<?php echo htmlspecialchars($module); ?>">
+<body data-theme="light" data-sidebar-state="expanded" data-module="<?php echo htmlspecialchars($module); ?>">
 
-<?php if ($isAuthenticated): ?>
-    <canvas id="app-3d" aria-hidden="true"></canvas>
-<?php endif; ?>
+<?php if ($isAuthenticated): ?><?php endif; ?>
 
 <div class="app-shell" data-has-sidebar="<?php echo $isAuthenticated ? 'true' : 'false'; ?>">
     <?php if ($isAuthenticated): ?>
@@ -126,26 +123,12 @@ $buzzPreview = $layoutData->BuzzPreview;
                         </ol>
                     </nav>
                 </div>
-
-                <?php if ($isAuthenticated && $module === 'dashboard'): ?>
-                    <form class="top-search" role="search" method="get" action="/dashboard" aria-label="Search">
-                        <input class="top-search__input" type="search" name="q" placeholder="Search…" autocomplete="off" value="<?php echo htmlspecialchars(trim((string)($_GET['q'] ?? ''))); ?>" />
-                        <button class="top-search__btn" type="submit" aria-label="Search">
-                            <span class="icon icon-search" aria-hidden="true"></span>
-                        </button>
-                        <?php if (trim((string)($_GET['q'] ?? '')) !== ''): ?>
-                            <a class="top-search__clear" href="/dashboard">Clear</a>
-                        <?php endif; ?>
-                    </form>
-                <?php endif; ?>
             </div>
 
             <div class="app-header-actions">
-                <button class="icon-button theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">
-                    <span class="icon icon-sun"></span>
-                    <span class="icon icon-moon"></span>
-                </button>
-
+                <?php if ($isAuthenticated): ?>
+                    <button class="icon-button quick-add" type="button" aria-label="Quick add">+</button>
+                <?php endif; ?>
                 <?php if ($isAuthenticated): ?>
                     <div class="topbar-buzz-wrapper dropdown">
                         <a class="icon-button topbar-buzz dropdown-toggle" href="#" id="buzzMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="button" aria-label="Buzz">
@@ -240,14 +223,22 @@ $buzzPreview = $layoutData->BuzzPreview;
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/site.js"></script>
 <?php if ($isAuthenticated): ?>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
-    <script src="/js/app-3d.js" defer></script>
-<?php endif; ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script><?php endif; ?>
 <?php if ($isAuthenticated && $module === 'vehicle'): ?>
     <script src="/js/vehicle-make-model.js" defer></script>
 <?php endif; ?>
 <?php if ($isAuthenticated && $module === 'vacation'): ?>
     <script src="/js/place_autocomplete.js" defer></script>
 <?php endif; ?>
+<?php if ($module === 'dashboard'): ?>
+    <script src="/js/dashboard_v2.js" defer></script>
+<?php endif; ?>
 </body>
 </html>
+
+
+
+
+
+
+

@@ -158,11 +158,11 @@ $csp = "default-src 'self'; "
     . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     . "img-src 'self' data: blob:; "
     . "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com https://fonts.googleapis.com; "
-    . "connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'";
+    . "connect-src 'self' https://api.bigdatacloud.net https://ipapi.co; object-src 'none'; base-uri 'self'; frame-ancestors 'self'";
 header('Content-Security-Policy: ' . $csp);
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
-header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+header('Permissions-Policy: geolocation=(self), microphone=(), camera=()');
 
 // Simple static helper: serve /galaxy or /galaxy.html directly from public folder for demo preview
 $reqPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -1201,3 +1201,4 @@ if (isset($appRoutes[$requestUri])) {
 // 5. Fallback
 http_response_code(404);
 echo "404 Not Found";
+

@@ -38,6 +38,7 @@
   --radius-sm: 12px;
   --sidebar-width: 288px;
   --header-height: 74px;
+  --shell-pad: clamp(18px, 4vw, 40px);
   --transition-snappy: cubic-bezier(0.23, 0.92, 0.36, 1);
 
   --font-size-xs: clamp(0.72rem, 0.7rem + 0.15vw, 0.82rem);
@@ -298,7 +299,7 @@ a:hover{
   min-height: 100vh;
   display:flex;
   gap: clamp(16px, 4vw, 36px);
-  padding: clamp(18px, 4vw, 40px);
+  padding: var(--shell-pad);
   align-items:flex-start;
   position: relative;
 }
@@ -332,7 +333,7 @@ a:hover{
   backdrop-filter: blur(28px) saturate(130%);
   min-height: calc(100vh - clamp(36px, 6vw, 60px));
   position: sticky;
-  top: clamp(18px, 5vw, 32px);
+  top: var(--shell-pad);
 }
 
 body[data-sidebar-state="collapsed"] .app-sidebar{
@@ -543,14 +544,14 @@ body[data-sidebar-state="collapsed"] .app-sidebar .sidebar-surface{
   box-shadow: var(--shadow-soft), 0 22px 46px rgba(var(--module-accent-1-rgb),0.10);
   backdrop-filter: blur(24px) saturate(140%);
   position: sticky;
-  top: clamp(18px, 4vw, 32px);
+  top: var(--shell-pad);
   z-index: 100;
 }
 
 /* Flying module tabs */
 .module-tabs{
   position: sticky;
-  top: calc(clamp(18px, 4vw, 32px) + var(--header-height) + 10px);
+  top: calc(var(--shell-pad) + var(--header-height) + 10px);
   z-index: 95;
   display:flex;
   gap: 10px;
@@ -991,6 +992,20 @@ body[data-theme="dark"] .module-tab{
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   margin-top: 14px;
   min-width: 0;
+}
+
+/* Finance page: keep summary wide on desktop, stack on small screens */
+.finance-page .finance-summary{
+  grid-column: span 2;
+}
+
+@media (max-width: 1200px){
+  .finance-page .grid{
+    grid-template-columns: 1fr !important;
+  }
+  .finance-page .finance-summary{
+    grid-column: 1 / -1 !important;
+  }
 }
 
 .card-kicker{
@@ -1729,10 +1744,11 @@ a.btn-soft:not(.btn){
   :root{
     --sidebar-width: 252px;
     --header-height: 64px;
+    --shell-pad: clamp(12px, 2.4vw, 24px);
   }
 
   .app-shell{
-    padding: clamp(12px, 2.4vw, 24px);
+    padding: var(--shell-pad);
     gap: clamp(12px, 2.4vw, 24px);
   }
 
@@ -1756,7 +1772,7 @@ a.btn-soft:not(.btn){
 /* Shorter viewport heights (small laptop heights) */
 @media (max-height: 820px){
   .app-shell{
-    padding: 12px;
+    padding: var(--shell-pad);
     gap: 12px;
   }
 
@@ -1784,10 +1800,11 @@ a.btn-soft:not(.btn){
     --radius-lg: 18px;
     --radius-md: 14px;
     --radius-sm: 10px;
+    --shell-pad: 10px;
   }
   
   .app-shell{
-    padding: 10px;
+    padding: var(--shell-pad);
     gap: 10px;
   }
   
@@ -1993,4 +2010,153 @@ html{
   .app-nav{
     padding-bottom: 20px;
   }
+}
+
+/* Disable module background styling (flat neutral) */
+body[data-module] {
+  --module-opacity: 0;
+  --module-hover-opacity: 0;
+}
+
+.module-bg,
+.module-bg::before {
+  background: none !important;
+}
+
+.module-bg::before {
+  content: none !important;
+}
+
+/* Layout alignment overrides */
+.app-shell{
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+.app-sidebar{
+  position: sticky;
+  top: 16px;
+}
+
+.app-main{
+  min-width: 0;
+}
+
+.app-header{
+  margin: 0;
+  width: 100%;
+}
+
+.app-main .container,
+.app-main .container-fluid{
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.app-main .app-content{
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 900px){
+  .app-shell{
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar{
+    display: none;
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait){
+  .module-tabs{
+    display: none;
+  }
+}
+
+/* Module image backgrounds + subtle motion overlay (Option A) */
+body[data-module="health"],
+body[data-module="calendar"],
+body[data-module="family"],
+body[data-module="vehicle"]{
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+body[data-module="health"]{
+  background:
+    linear-gradient(rgba(240,247,242,0.80), rgba(240,247,242,0.80)),
+    url("/img/bg/health.jpg") center / cover no-repeat fixed;
+}
+
+body[data-module="calendar"]{
+  background:
+    linear-gradient(rgba(236,242,250,0.82), rgba(236,242,250,0.82)),
+    url("/img/bg/calendar.jpg") center / cover no-repeat fixed;
+}
+
+body[data-module="family"]{
+  background:
+    linear-gradient(rgba(246,242,236,0.82), rgba(246,242,236,0.82)),
+    url("/img/bg/family.jpg") center / cover no-repeat fixed;
+}
+
+body[data-module="vehicle"]{
+  background:
+    linear-gradient(rgba(238,242,246,0.84), rgba(238,242,246,0.84)),
+    url("/img/bg/vehicle.jpg") center / cover no-repeat fixed;
+}
+
+/* Animated glow overlay (Option A) */
+body[data-module="health"]::after,
+body[data-module="calendar"]::after,
+body[data-module="family"]::after,
+body[data-module="vehicle"]::after{
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(22px);
+  opacity: 0.7;
+  animation: rtGlowDrift 20s ease-in-out infinite;
+}
+
+body[data-module="health"]::after{
+  background:
+    radial-gradient(circle at 20% 30%, rgba(94,226,157,.14), transparent 55%),
+    radial-gradient(circle at 80% 40%, rgba(76,168,120,.10), transparent 60%);
+}
+
+body[data-module="calendar"]::after{
+  background:
+    radial-gradient(circle at 18% 35%, rgba(106,156,255,.12), transparent 58%),
+    radial-gradient(circle at 78% 45%, rgba(86,196,255,.10), transparent 60%);
+}
+
+body[data-module="family"]::after{
+  background:
+    radial-gradient(circle at 22% 30%, rgba(171,131,96,.14), transparent 58%),
+    radial-gradient(circle at 78% 50%, rgba(122,171,120,.10), transparent 62%);
+}
+
+body[data-module="vehicle"]::after{
+  background:
+    radial-gradient(circle at 20% 35%, rgba(120,146,168,.14), transparent 58%),
+    radial-gradient(circle at 80% 45%, rgba(88,112,140,.10), transparent 62%);
+}
+
+@keyframes rtGlowDrift{
+  0%   { transform: translate3d(-2%, -1%, 0) scale(1.02); }
+  50%  { transform: translate3d( 2%,  1%, 0) scale(1.05); }
+  100% { transform: translate3d(-2%, -1%, 0) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  body::after{ animation: none !important; }
 }
