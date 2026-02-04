@@ -10,6 +10,7 @@ use Routina\Models\FinanceIncome;
 use Routina\Models\FinanceSaving;
 use Routina\Models\FinanceReflection;
 use Routina\Models\FinanceDiary;
+use Routina\Models\FinanceDebt;
 use Routina\Models\User;
 use Routina\Models\Vacation;
 use Routina\Services\CurrencyService;
@@ -216,6 +217,7 @@ class FinanceController {
                     'totalsBase' => Transaction::totalsBaseForMonth($_SESSION['user_id'], $month),
                     'expenseByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'expense'),
                     'incomeByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'income'),
+                    'debtTotals' => FinanceDebt::totals($_SESSION['user_id']),
                     'error' => 'Please provide a description, valid amount, and type.'
                 ]);
                 return;
@@ -234,6 +236,7 @@ class FinanceController {
                     'totalsBase' => Transaction::totalsBaseForMonth($_SESSION['user_id'], $month),
                     'expenseByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'expense'),
                     'incomeByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'income'),
+                    'debtTotals' => FinanceDebt::totals($_SESSION['user_id']),
                     'error' => 'Could not fetch exchange rate. Please try again in a moment.'
                 ]);
                 return;
@@ -299,7 +302,8 @@ class FinanceController {
             'vacationSummaries' => $vacationSummaries,
             'totalsBase' => Transaction::totalsBaseForMonth($_SESSION['user_id'], $month),
             'expenseByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'expense'),
-            'incomeByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'income')
+            'incomeByCurrency' => Transaction::summarizeByOriginalCurrencyForMonth($_SESSION['user_id'], $month, 'income'),
+            'debtTotals' => FinanceDebt::totals($_SESSION['user_id'])
         ]);
     }
 
@@ -460,11 +464,12 @@ class FinanceController {
         }
 
         $currencyCode = $this->getUserCurrencyCode();
+        $totalsAll = Transaction::totalsBaseAll($_SESSION['user_id']);
+        $availableBalance = (float)($totalsAll['income'] ?? 0) - (float)($totalsAll['expense'] ?? 0);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $goal = trim($_POST['goal'] ?? '');
             $targetRaw = $_POST['target_amount'] ?? '';
-            $currentRaw = $_POST['current_amount'] ?? '';
 
             if ($goal === '' || $targetRaw === '' || !is_numeric($targetRaw)) {
                 $savings = FinanceSaving::getAll($_SESSION['user_id']);
@@ -472,13 +477,13 @@ class FinanceController {
                     'savings' => $savings,
                     'currencyCode' => $currencyCode,
                     'currencySymbol' => CurrencyService::symbolFor($currencyCode),
+                    'availableBalance' => $availableBalance,
                     'error' => 'Please provide a goal and target amount.'
                 ]);
                 return;
             }
 
-            $current = ($currentRaw !== '' && is_numeric($currentRaw)) ? (float)$currentRaw : 0;
-            FinanceSaving::create($_SESSION['user_id'], $goal, (float)$targetRaw, $current);
+            FinanceSaving::create($_SESSION['user_id'], $goal, (float)$targetRaw, $availableBalance);
             header('Location: /finance/savings');
             exit;
         }
@@ -487,7 +492,8 @@ class FinanceController {
         view('finance/savings', [
             'savings' => $savings,
             'currencyCode' => $currencyCode,
-            'currencySymbol' => CurrencyService::symbolFor($currencyCode)
+            'currencySymbol' => CurrencyService::symbolFor($currencyCode),
+            'availableBalance' => $availableBalance
         ]);
     }
 
@@ -565,5 +571,178 @@ class FinanceController {
         header('Content-Type: text/html; charset=utf-8');
         view('finance/partials/diary_detail', ['entry' => $entry]);
         exit;
+    }
+
+    public function debts() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $filterEmail = isset($_GET['person_email']) ? trim((string)$_GET['person_email']) : '';
+        $editId = isset($_GET['edit']) && is_numeric($_GET['edit']) ? (int)$_GET['edit'] : 0;
+        $editEntry = null;
+        $entries = [];
+        $error = '';
+
+        $export = isset($_GET['export']) ? (string)$_GET['export'] : '';
+        if ($export === 'csv' || $export === 'excel' || $export === 'print') {
+            $exportEmail = ($filterEmail !== '' && filter_var($filterEmail, FILTER_VALIDATE_EMAIL)) ? $filterEmail : '';
+            if ($exportEmail !== '') {
+                $entries = FinanceDebt::getByEmail($userId, $exportEmail);
+            } else {
+                $entries = FinanceDebt::getAll($userId);
+            }
+
+            $calcTotals = function (array $rows): array {
+                $totals = ['debt' => 0.0, 'credit' => 0.0];
+                foreach ($rows as $row) {
+                    $type = strtolower((string)($row['debt_type'] ?? ''));
+                    if ($type === 'debt' || $type === 'credit') {
+                        $totals[$type] += (float)($row['amount'] ?? 0);
+                    }
+                }
+                return $totals;
+            };
+            $exportTotals = $calcTotals($entries);
+            $exportOutstanding = (float)$exportTotals['credit'] - (float)$exportTotals['debt'];
+
+            if ($export === 'csv') {
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename="debt_statement.csv"');
+                $out = fopen('php://output', 'w');
+                fputcsv($out, ['Statement', $exportEmail !== '' ? $exportEmail : 'All']);
+                fputcsv($out, ['Total debt (I owe)', number_format((float)$exportTotals['debt'], 2, '.', '')]);
+                fputcsv($out, ['Total credit (They owe)', number_format((float)$exportTotals['credit'], 2, '.', '')]);
+                fputcsv($out, ['Outstanding', number_format((float)$exportOutstanding, 2, '.', '')]);
+                fputcsv($out, []);
+                fputcsv($out, ['Date', 'Person Email', 'Type', 'Amount', 'Description']);
+                foreach ($entries as $row) {
+                    fputcsv($out, [
+                        (string)($row['entry_date'] ?? ''),
+                        (string)($row['person_email'] ?? ''),
+                        (string)($row['debt_type'] ?? ''),
+                        number_format((float)($row['amount'] ?? 0), 2, '.', ''),
+                        (string)($row['description'] ?? '')
+                    ]);
+                }
+                fclose($out);
+                exit;
+            }
+
+            if ($export === 'excel') {
+                header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+                header('Content-Disposition: attachment; filename="debt_statement.xls"');
+                echo "<table border=\"1\">";
+                echo "<tr><th colspan=\"4\">Statement</th></tr>";
+                echo "<tr><td colspan=\"4\">" . htmlspecialchars($exportEmail !== '' ? $exportEmail : 'All', ENT_QUOTES) . "</td></tr>";
+                echo "<tr><td>Total debt (I owe)</td><td colspan=\"3\">" . number_format((float)$exportTotals['debt'], 2, '.', '') . "</td></tr>";
+                echo "<tr><td>Total credit (They owe)</td><td colspan=\"3\">" . number_format((float)$exportTotals['credit'], 2, '.', '') . "</td></tr>";
+                echo "<tr><td>Outstanding</td><td colspan=\"3\">" . number_format((float)$exportOutstanding, 2, '.', '') . "</td></tr>";
+                echo "<tr><th>Date</th><th>Person Email</th><th>Type</th><th>Amount</th><th>Description</th></tr>";
+                foreach ($entries as $row) {
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars((string)($row['entry_date'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "<td>" . htmlspecialchars((string)($row['person_email'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "<td>" . htmlspecialchars((string)($row['debt_type'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "<td>" . number_format((float)($row['amount'] ?? 0), 2, '.', '') . "</td>";
+                    echo "<td>" . htmlspecialchars((string)($row['description'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "</tr>";
+                }
+                echo "</table>";
+                exit;
+            }
+
+            if ($export === 'print') {
+                header('Content-Type: text/html; charset=utf-8');
+                $title = $exportEmail !== '' ? ('Debt statement for ' . $exportEmail) : 'Debt statement';
+                echo "<!doctype html><html><head><meta charset=\"utf-8\"><title>" . htmlspecialchars($title, ENT_QUOTES) . "</title>";
+                echo "<style>body{font-family:Arial, sans-serif;margin:24px;color:#111;}h1{font-size:20px;margin-bottom:8px;}table{width:100%;border-collapse:collapse;margin-top:12px;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{text-align:left;background:#f3f4f6;} .totals{margin-top:12px;display:flex;gap:24px;}</style>";
+                echo "</head><body>";
+                echo "<h1>" . htmlspecialchars($title, ENT_QUOTES) . "</h1>";
+                echo "<div class=\"totals\">";
+                echo "<div>Total debt (I owe): <strong>" . number_format((float)$exportTotals['debt'], 2) . "</strong></div>";
+                echo "<div>Total credit (They owe): <strong>" . number_format((float)$exportTotals['credit'], 2) . "</strong></div>";
+                echo "<div>Outstanding: <strong>" . number_format($exportOutstanding, 2) . "</strong></div>";
+                echo "</div>";
+                echo "<div style=\"margin-top:8px;color:#666;font-size:12px;\">Tip: use your browser’s Print dialog to save as PDF.</div>";
+                echo "<table><thead><tr><th>Date</th><th>Person Email</th><th>Type</th><th>Amount</th><th>Description</th></tr></thead><tbody>";
+                foreach ($entries as $row) {
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars((string)($row['entry_date'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "<td>" . htmlspecialchars((string)($row['person_email'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "<td>" . htmlspecialchars((string)($row['debt_type'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "<td>" . number_format((float)($row['amount'] ?? 0), 2, '.', '') . "</td>";
+                    echo "<td>" . htmlspecialchars((string)($row['description'] ?? ''), ENT_QUOTES) . "</td>";
+                    echo "</tr>";
+                }
+                echo "</tbody></table>";
+                echo "</body></html>";
+                exit;
+            }
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $action = (string)($_POST['action'] ?? 'create');
+            if ($action === 'delete') {
+                $deleteId = isset($_POST['id']) && is_numeric($_POST['id']) ? (int)$_POST['id'] : 0;
+                if ($deleteId > 0) {
+                    FinanceDebt::deleteByIdForUser($userId, $deleteId);
+                }
+                header('Location: /finance/debts' . ($filterEmail !== '' ? '?person_email=' . urlencode($filterEmail) : ''));
+                exit;
+            }
+
+            $type = strtolower(trim((string)($_POST['debt_type'] ?? '')));
+            $amountRaw = $_POST['amount'] ?? '';
+            $date = trim((string)($_POST['date'] ?? date('Y-m-d')));
+            $email = strtolower(trim((string)($_POST['person_email'] ?? '')));
+            $description = trim((string)($_POST['description'] ?? ''));
+            $allowed = ['debt', 'credit'];
+
+            if (!in_array($type, $allowed, true)) {
+                $error = 'Please choose Debt or Credit.';
+            } elseif ($amountRaw === '' || !is_numeric($amountRaw)) {
+                $error = 'Please provide a valid amount.';
+            } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $error = 'Please provide a valid date.';
+            } elseif ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Please provide a valid email address.';
+            } else {
+                if ($action === 'update') {
+                    $updateId = isset($_POST['id']) && is_numeric($_POST['id']) ? (int)$_POST['id'] : 0;
+                    if ($updateId > 0) {
+                        FinanceDebt::update($userId, $updateId, $type, (float)$amountRaw, $date, $email, $description);
+                    }
+                } else {
+                    FinanceDebt::create($userId, $type, (float)$amountRaw, $date, $email, $description);
+                }
+                header('Location: /finance/debts' . ($filterEmail !== '' ? '?person_email=' . urlencode($filterEmail) : ''));
+                exit;
+            }
+        }
+
+        if ($filterEmail !== '' && filter_var($filterEmail, FILTER_VALIDATE_EMAIL)) {
+            $entries = FinanceDebt::getByEmail($userId, $filterEmail);
+        } else {
+            $entries = FinanceDebt::getAll($userId);
+        }
+
+        if ($editId > 0) {
+            $editEntry = FinanceDebt::findByIdForUser($userId, $editId);
+        }
+
+        $totals = FinanceDebt::totals($userId);
+        $byPerson = FinanceDebt::totalsByEmail($userId);
+
+        view('finance/debts', [
+            'entries' => $entries,
+            'totals' => $totals,
+            'byPerson' => $byPerson,
+            'filterEmail' => $filterEmail,
+            'editEntry' => $editEntry,
+            'error' => $error
+        ]);
     }
 }

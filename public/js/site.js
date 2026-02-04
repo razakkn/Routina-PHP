@@ -16,6 +16,7 @@
 		if (path.startsWith("/health")) return "health";
 		if (path.startsWith("/calendar")) return "calendar";
 		if (path.startsWith("/family")) return "family";
+		if (path.startsWith("/buzz")) return "buzz";
 		if (path.startsWith("/profile") || path.startsWith("/account/profile")) return "profile";
 		return "dashboard";
 	};
@@ -76,11 +77,18 @@
 		}
 	};
 
-	const applyTheme = () => {
-		body.dataset.theme = "light";
-		document.documentElement.style.colorScheme = "light";
+	const THEME_KEY = "routina.theme";
+	const applyTheme = (theme) => {
+		const nextTheme = theme === "dark" ? "dark" : "light";
+		body.dataset.theme = nextTheme;
+		document.documentElement.style.colorScheme = nextTheme;
+		const toggle = document.querySelector(".theme-toggle");
+		if (toggle) {
+			toggle.setAttribute("aria-pressed", String(nextTheme === "dark"));
+		}
 	};
-	applyTheme();
+	const savedTheme = safeGet(THEME_KEY);
+	applyTheme(savedTheme || "light");
 
 	// Highlight active module tab
 	if (moduleTabs) {
@@ -141,6 +149,16 @@
 
 	const moduleLinks = Array.from(document.querySelectorAll('a[data-module][href]'));
 	moduleLinks.forEach(attachWarpToLink);
+
+	const themeToggle = document.querySelector(".theme-toggle");
+	if (themeToggle) {
+		themeToggle.addEventListener("click", () => {
+			const current = body.dataset.theme === "dark" ? "dark" : "light";
+			const nextTheme = current === "dark" ? "light" : "dark";
+			applyTheme(nextTheme);
+			safeSet(THEME_KEY, nextTheme);
+		});
+	}
 
 
 	// Easter egg: small, rotating, non-repeating (within a session)

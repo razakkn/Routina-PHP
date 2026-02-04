@@ -11,6 +11,8 @@
     $incomeByCurrency = is_array($incomeByCurrency ?? null) ? $incomeByCurrency : [];
     $currencyOptions = is_array($currencyOptions ?? null) ? $currencyOptions : [];
     $vacations = is_array($vacations ?? null) ? $vacations : [];
+    $debtTotals = is_array($debtTotals ?? null) ? $debtTotals : ['debt' => 0, 'credit' => 0];
+    $debtOutstanding = (float)($debtTotals['credit'] ?? 0) - (float)($debtTotals['debt'] ?? 0);
     $vacationMap = [];
     foreach ($vacations as $v) {
         if (isset($v['id'])) {
@@ -37,6 +39,7 @@
             <a class="btn btn-outline-secondary btn-sm" href="/finance/savings">Savings</a>
             <a class="btn btn-outline-secondary btn-sm" href="/finance/reflection">Reflection</a>
             <a class="btn btn-outline-secondary btn-sm" href="/finance/diary">Diary</a>
+            <a class="btn btn-outline-secondary btn-sm" href="/finance/debts">Debt &amp; Credit</a>
         </div>
     </div>
 
@@ -70,20 +73,27 @@
                     <div class="card-kicker">Month summary</div>
                     <div class="text-muted small">Totals for the selected month.</div>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm md-new-btn" data-detail-template="finance-new">New Transaction</button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm d-none finance-debt-show">Show Debt &amp; Credit</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm md-new-btn" data-detail-template="finance-new">New Transaction</button>
+                </div>
             </div>
 
             <div class="row g-3 mt-1">
-                <div class="col-md-6">
-                    <div class="p-3 border rounded">
-                        <div class="text-muted">Total income (<?php echo htmlspecialchars($baseCurrencyCode); ?>)</div>
-                        <div style="font-size: 22px; font-weight: 800;">+<?php echo $fmtBase((float)($totalsBase['income'] ?? 0)); ?></div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="p-3 border rounded">
-                        <div class="text-muted">Total expense (<?php echo htmlspecialchars($baseCurrencyCode); ?>)</div>
-                        <div style="font-size: 22px; font-weight: 800;">-<?php echo $fmtBase((float)($totalsBase['expense'] ?? 0)); ?></div>
+                <div class="col-lg-12 finance-summary-col">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded">
+                                <div class="text-muted">Total income (<?php echo htmlspecialchars($baseCurrencyCode); ?>)</div>
+                                <div style="font-size: 22px; font-weight: 800;">+<?php echo $fmtBase((float)($totalsBase['income'] ?? 0)); ?></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded">
+                                <div class="text-muted">Total expense (<?php echo htmlspecialchars($baseCurrencyCode); ?>)</div>
+                                <div style="font-size: 22px; font-weight: 800;">-<?php echo $fmtBase((float)($totalsBase['expense'] ?? 0)); ?></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -149,12 +159,38 @@
             </div>
         </div>
 
-        <div class="md-detail card">
-            <div class="md-detail-top">
-                <button type="button" class="btn btn-outline-secondary btn-sm md-back">Back</button>
+        <div>
+            <div class="card p-3 mb-3 finance-debt-widget">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">Debt &amp; Credit (<?php echo htmlspecialchars($baseCurrencyCode); ?>)</div>
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none finance-debt-hide">Hide</button>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-6 col-lg-12">
+                        <div class="text-muted small">Total debt</div>
+                        <div style="font-weight: 800;">-<?php echo $fmtBase((float)($debtTotals['debt'] ?? 0)); ?></div>
+                    </div>
+                    <div class="col-6 col-lg-12">
+                        <div class="text-muted small">Total credit</div>
+                        <div style="font-weight: 800;">+<?php echo $fmtBase((float)($debtTotals['credit'] ?? 0)); ?></div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small">Outstanding</div>
+                        <div style="font-weight: 800;">
+                            <?php echo ($debtOutstanding >= 0 ? '+' : '-'); ?><?php echo $fmtBase(abs($debtOutstanding)); ?>
+                        </div>
+                        <a class="small text-decoration-none d-inline-block mt-1" href="/finance/debts">View details</a>
+                    </div>
+                </div>
             </div>
-            <div class="md-detail-content">
-                <div class="text-muted">Select a section to view details.</div>
+
+            <div class="md-detail card">
+                <div class="md-detail-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm md-back">Back</button>
+                </div>
+                <div class="md-detail-content">
+                    <div class="text-muted">Select a section to view details.</div>
+                </div>
             </div>
         </div>
     </div>
@@ -334,6 +370,7 @@
     <?php endif; ?>
 
     <script src="/js/master-detail.js" defer></script>
+    <script src="/js/finance-debt-widget.js" defer></script>
 </div>
 
 <?php 

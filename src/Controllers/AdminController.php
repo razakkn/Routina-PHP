@@ -259,6 +259,7 @@ class AdminController {
             'finance_income',
             'finance_incomes',
             'finance_diary',
+            'finance_debts',
             'finance_savings',
             'finance_reflections',
             'vehicles',

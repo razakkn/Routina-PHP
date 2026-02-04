@@ -50,7 +50,6 @@ $buzzPreview = $layoutData->BuzzPreview;
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/css/site.css" />
     <link rel="stylesheet" href="/css/sidebar_slices.css" />
-    <link rel="stylesheet" href="/css/canvas.css" />
     <?php if ($isAuthenticated && $module === 'vacation'): ?>
         <link rel="stylesheet" href="/css/place_autocomplete.css" />
     <?php endif; ?>
@@ -78,7 +77,7 @@ $buzzPreview = $layoutData->BuzzPreview;
                     <div class="brand-mark">⧉</div>
                     <div>
                         <div class="brand-title">Routina</div>
-                        <div class="brand-sub">Personal Timeline</div>
+                        <div class="brand-sub brand-tagline">One place. Your whole life.</div>
                     </div>
                     <button class="icon-button sidebar-close" type="button" data-sidebar-toggle aria-label="Collapse menu">
                         <span class="icon icon-close"></span>
@@ -115,20 +114,15 @@ $buzzPreview = $layoutData->BuzzPreview;
                     </button>
                 <?php endif; ?>
                 <div class="app-header-meta">
-                    <div class="app-header-title">Routina</div>
-                    <nav class="app-breadcrumbs" aria-label="Breadcrumb">
-                        <ol class="breadcrumb-list">
-                            <li class="breadcrumb-item"><a href="/">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><?php echo htmlspecialchars(ltrim($currentPath, '/')); ?></li>
-                        </ol>
-                    </nav>
+                    <div class="app-header-title">Routina <span class="brand-tagline">One place. Your whole life.</span></div>
                 </div>
             </div>
 
             <div class="app-header-actions">
-                <?php if ($isAuthenticated): ?>
-                    <button class="icon-button quick-add" type="button" aria-label="Quick add">+</button>
-                <?php endif; ?>
+                <button class="icon-button theme-toggle" type="button" aria-label="Toggle theme" aria-pressed="false">
+                    <span class="icon icon-sun" aria-hidden="true">☀️</span>
+                    <span class="icon icon-moon" aria-hidden="true">🌙</span>
+                </button>
                 <?php if ($isAuthenticated): ?>
                     <div class="topbar-buzz-wrapper dropdown">
                         <a class="icon-button topbar-buzz dropdown-toggle" href="#" id="buzzMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" role="button" aria-label="Buzz">
@@ -216,6 +210,11 @@ $buzzPreview = $layoutData->BuzzPreview;
         <footer class="app-footer">
             <span class="muted-sm"><?php echo htmlspecialchars(quote_of_the_day()); ?></span>
         </footer>
+        <?php if ($isAuthenticated): ?>
+            <button class="mobile-menu-fab" type="button" data-sidebar-toggle aria-label="Open menu">
+                <span class="icon icon-menu"></span>
+            </button>
+        <?php endif; ?>
     </main>
 </div>
 
@@ -235,6 +234,7 @@ $buzzPreview = $layoutData->BuzzPreview;
 <?php endif; ?>
 </body>
 </html>
+
 
 
 

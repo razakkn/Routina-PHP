@@ -282,6 +282,7 @@ class User
             $safeDelete("DELETE FROM finance_assets WHERE user_id = :uid", ['uid' => $userId]);
             $safeDelete("DELETE FROM finance_savings WHERE user_id = :uid", ['uid' => $userId]);
             $safeDelete("DELETE FROM finance_reflections WHERE user_id = :uid", ['uid' => $userId]);
+            $safeDelete("DELETE FROM finance_debts WHERE user_id = :uid", ['uid' => $userId]);
             $safeDelete("DELETE FROM transactions WHERE user_id = :uid", ['uid' => $userId]);
             
             // Health data (fix: table is health_entries not health_records)

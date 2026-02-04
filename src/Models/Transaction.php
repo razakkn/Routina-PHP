@@ -106,6 +106,33 @@ class Transaction
     }
 
     /**
+     * Get totals (income and expense) in base currency for all time.
+     *
+     * @param int $userId User ID
+     * @return array{income: float, expense: float} Totals by type
+     */
+    public static function totalsBaseAll(int $userId): array
+    {
+        $db = Database::getConnection();
+        $sql = "SELECT type, SUM(amount) AS total
+                FROM transactions
+                WHERE user_id = :uid
+                GROUP BY type";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['uid' => $userId]);
+        $rows = $stmt->fetchAll();
+
+        $totals = ['income' => 0.0, 'expense' => 0.0];
+        foreach ($rows as $r) {
+            $t = (string)($r['type'] ?? '');
+            if (isset($totals[$t])) {
+                $totals[$t] = (float)($r['total'] ?? 0);
+            }
+        }
+        return $totals;
+    }
+
+    /**
      * Create a new transaction.
      *
      * @param int $userId User ID

@@ -989,6 +989,12 @@ if ($requestUri === '/finance/diary/detail') {
     exit;
 }
 
+if ($requestUri === '/finance/debts') {
+    $controller = new \Routina\Controllers\FinanceController();
+    $controller->debts();
+    exit;
+}
+
 if ($requestUri === '/vehicle/dashboard') {
     $controller = new \Routina\Controllers\VehicleController();
     $controller->dashboard();

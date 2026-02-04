@@ -35,31 +35,40 @@
             }
         }
 
-        function setDetailHtml(html) {
+        function setDetailText(text) {
             if (detailContent) {
-                detailContent.innerHTML = html;
+                detailContent.textContent = String(text || '');
             }
+            showDetail();
+        }
+
+        function setDetailFromTemplate(template) {
+            if (!detailContent || !template) return;
+            const nodes = Array.from(template.childNodes).map((node) => node.cloneNode(true));
+            detailContent.replaceChildren(...nodes);
             showDetail();
         }
 
         function loadDetail(url) {
             if (!url) return;
             if (cache.has(url)) {
-                setDetailHtml(cache.get(url));
+                setDetailText(cache.get(url));
                 return;
             }
             if (detailContent) {
-                detailContent.innerHTML = '<div class="text-muted">Loading…</div>';
+                detailContent.textContent = 'Loading...';
+                detailContent.classList.add('text-muted');
             }
             fetch(url, { headers: { 'X-Requested-With': 'fetch' } })
                 .then((res) => res.ok ? res.text() : Promise.reject(res.status))
                 .then((html) => {
                     cache.set(url, html);
-                    setDetailHtml(html);
+                    setDetailText(html);
                 })
                 .catch(() => {
                     if (detailContent) {
-                        detailContent.innerHTML = '<div class="text-muted">Unable to load details.</div>';
+                        detailContent.textContent = 'Unable to load details.';
+                        detailContent.classList.add('text-muted');
                     }
                 });
         }
@@ -76,7 +85,7 @@
             }
             if (item && item.getAttribute('data-detail-html')) {
                 e.preventDefault();
-                setDetailHtml(item.getAttribute('data-detail-html'));
+                setDetailText(item.getAttribute('data-detail-html'));
                 return;
             }
             if (templateBtn) {
@@ -84,7 +93,7 @@
                 if (!key) return;
                 const template = document.getElementById('md-template-' + key);
                 if (template) {
-                    setDetailHtml(template.innerHTML);
+                    setDetailFromTemplate(template);
                 }
             }
         });

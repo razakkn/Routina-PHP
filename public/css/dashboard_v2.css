@@ -317,3 +317,45 @@ body[data-module="dashboard"]{
   font-weight: 700;
 }
 
+
+/* Dashboard V2 dark mode overrides */
+body[data-theme="dark"][data-module="dashboard"]{
+  --bg: #0b0f1e;
+  --surface: rgba(18,22,44,0.72);
+  --surface-strong: rgba(18,22,44,0.9);
+  --border: rgba(124,137,210,0.35);
+  --shadow: 0 22px 60px rgba(8,10,24,0.7);
+  --shadow2: 0 16px 34px rgba(8,10,24,0.6);
+
+  --text: #eef1ff;
+  --muted: rgba(214,224,255,0.68);
+
+  --brand: #7c6dff;
+  --brand2: #42d8ff;
+}
+
+body[data-theme="dark"][data-module="dashboard"] .dashv2-title,
+body[data-theme="dark"][data-module="dashboard"] .cardv2-title{
+  color: var(--text);
+}
+
+body[data-theme="dark"][data-module="dashboard"] .cardv2,
+body[data-theme="dark"][data-module="dashboard"] .focus,
+body[data-theme="dark"][data-module="dashboard"] .quick-item{
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow2);
+}
+
+body[data-theme="dark"][data-module="dashboard"] .dashv2-hero{
+  background: linear-gradient(135deg,
+    rgba(124,109,255,.18),
+    rgba(66,216,255,.14),
+    rgba(192,132,252,.12)
+  );
+}
+
+body[data-theme="dark"][data-module="dashboard"] .primary-link,
+body[data-theme="dark"][data-module="dashboard"] .quick-item{
+  color: #e8ebff;
+}
