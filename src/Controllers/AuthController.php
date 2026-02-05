@@ -322,6 +322,13 @@ class AuthController {
                 'email' => $email,
                 'routina_id' => $routinaId
             ];
+
+            // Auto-populate profile fields from family tree (relationship status, etc.)
+            try {
+                \Routina\Services\AuthService::autoPopulateFromFamilyTree((int)$id, $email, null);
+            } catch (\Throwable $e) {
+                error_log('Auto-populate failed: ' . $e->getMessage());
+            }
             
             // Redirect to dashboard with success message
             view('account/register', ['success' => 'Account created successfully! You can now log in.']);
